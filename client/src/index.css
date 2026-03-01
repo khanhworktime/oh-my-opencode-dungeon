@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Import Courier New for pixel punk aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -43,74 +46,83 @@
 }
 
 :root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
+  /* Pixel Punk Color Palette */
+  --neon-green: #00FF41;
+  --electric-blue: #00D9FF;
+  --neon-purple: #FF00FF;
+  --dark-bg: #0A0E27;
+  --dark-secondary: #1a1f3a;
+  --grid-color: #00FF41;
+  
+  --primary: #00D9FF;
+  --primary-foreground: #0A0E27;
+  --sidebar-primary: #00FF41;
+  --sidebar-primary-foreground: #0A0E27;
+  --chart-1: #00FF41;
+  --chart-2: #00D9FF;
+  --chart-3: #FF00FF;
+  --chart-4: #FFD700;
+  --chart-5: #00FF41;
+  --radius: 0.25rem;
+  --background: #0A0E27;
+  --foreground: #00FF41;
+  --card: #1a1f3a;
+  --card-foreground: #00D9FF;
+  --popover: #1a1f3a;
+  --popover-foreground: #00FF41;
+  --secondary: #FF00FF;
+  --secondary-foreground: #0A0E27;
+  --muted: #444466;
+  --muted-foreground: #888899;
+  --accent: #00FF41;
+  --accent-foreground: #0A0E27;
+  --destructive: #FF0055;
+  --destructive-foreground: #0A0E27;
+  --border: #00FF41;
+  --input: #1a1f3a;
+  --ring: #00D9FF;
+  --sidebar: #0A0E27;
+  --sidebar-foreground: #00FF41;
+  --sidebar-accent: #00D9FF;
+  --sidebar-accent-foreground: #0A0E27;
+  --sidebar-border: #00FF41;
+  --sidebar-ring: #FF00FF;
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  /* Dark mode uses same pixel punk palette */
+  --primary: #00D9FF;
+  --primary-foreground: #0A0E27;
+  --sidebar-primary: #00FF41;
+  --sidebar-primary-foreground: #0A0E27;
+  --background: #0A0E27;
+  --foreground: #00FF41;
+  --card: #1a1f3a;
+  --card-foreground: #00D9FF;
+  --popover: #1a1f3a;
+  --popover-foreground: #00FF41;
+  --secondary: #FF00FF;
+  --secondary-foreground: #0A0E27;
+  --muted: #444466;
+  --muted-foreground: #888899;
+  --accent: #00FF41;
+  --accent-foreground: #0A0E27;
+  --destructive: #FF0055;
+  --destructive-foreground: #0A0E27;
+  --border: #00FF41;
+  --input: #1a1f3a;
+  --ring: #00D9FF;
+  --chart-1: #00FF41;
+  --chart-2: #00D9FF;
+  --chart-3: #FF00FF;
+  --chart-4: #FFD700;
+  --chart-5: #00FF41;
+  --sidebar: #0A0E27;
+  --sidebar-foreground: #00FF41;
+  --sidebar-accent: #00D9FF;
+  --sidebar-accent-foreground: #0A0E27;
+  --sidebar-border: #00FF41;
+  --sidebar-ring: #FF00FF;
 }
 
 @layer base {
@@ -119,6 +131,27 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    letter-spacing: 0.05em;
+  }
+  
+  /* Pixel Punk Scanline Effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0, 255, 65, 0.02),
+      rgba(0, 255, 65, 0.02) 1px,
+      transparent 1px,
+      transparent 2px
+    );
+    z-index: 1;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -130,6 +163,13 @@
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
     @apply cursor-pointer;
+  }
+  
+  /* Pixel Punk Button Styles */
+  button {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
   }
 }
 
@@ -158,6 +198,44 @@
   .flex {
     min-height: 0;
     min-width: 0;
+  }
+  
+  /* Pixel Punk Panel Style */
+  .pixel-panel {
+    @apply bg-card border-2 border-border;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  }
+  
+  .pixel-panel-purple {
+    @apply bg-card border-2;
+    border-color: #FF00FF;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+  }
+  
+  .pixel-panel-blue {
+    @apply bg-card border-2;
+    border-color: #00D9FF;
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+  }
+  
+  /* Neon Text Glow */
+  .neon-glow {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+  
+  .neon-glow-green {
+    color: #00FF41;
+    text-shadow: 0 0 10px #00FF41, 0 0 20px #00FF41;
+  }
+  
+  .neon-glow-blue {
+    color: #00D9FF;
+    text-shadow: 0 0 10px #00D9FF, 0 0 20px #00D9FF;
+  }
+  
+  .neon-glow-purple {
+    color: #FF00FF;
+    text-shadow: 0 0 10px #FF00FF, 0 0 20px #FF00FF;
   }
 
   @media (min-width: 640px) {
