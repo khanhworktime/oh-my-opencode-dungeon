@@ -97,8 +97,8 @@
 - [x] Claude Code 退出后英雄消失（10 分钟无活动后自动移除）
 - [x] 修复地图黑屏问题（添加 crossOrigin="anonymous" 解决 CORS 问题）
 - [x] 整合新素材包（已拉取并复制到 client/public/sprites）
-- [ ] 修复 bridge API key 不匹配问题（统一使用 bridge.ts 的 getOrCreateApiKey）
-- [ ] 修复 Skills 无法新增的问题
+- [x] 修复 bridge API key 不匹配问题（统一使用 bridge.ts 的 getOrCreateApiKey）
+- [x] 修复 Skills 无法新增的问题（创建 ~/.claude/skills 目录）
 
 ## Phase 12: 前端视觉全面升级
 - [x] 拉取新素材包并评估可用资源
@@ -113,29 +113,42 @@
 - [x] 18 个 vitest 测试全部通过
 
 ## Phase 14: 英雄行为系统全面重构
-- [ ] 研究 Claude Code 所有指令类型并设计动作映射
-- [ ] 英雄走路动画：路径点系统 + 插值移动（房间之间沿走廊行走）
-- [ ] 出生动画：所有英雄在 Holy Sanctuary 出生（传送门/光效）
-- [ ] 消失动画：英雄回到 Holy Sanctuary 后消失（传送门/光效）
-- [ ] 房间逻辑修正：planning → Merchant Shop（买药水）、working → Boss Arena（打Boss）
-- [ ] Claude 指令→动作映射完善
+- [x] 研究 Claude Code 所有指令类型并设计动作映射
+- [x] 英雄走路动画：BFS 逐格寻路 + 插值移动（房间之间沿走廊行走）
+- [x] 出生动画：所有英雄在 Holy Sanctuary 出生（传送门/光效）
+- [x] 消失动画：英雄回到 Holy Sanctuary 后消失（传送门/光效）
+- [x] 房间逻辑修正：planning → Witch Shop、bash/write → Boss Arena、idle → Rest Area
+- [x] Claude 指令→动作映射完善
 - [ ] 找到适合的开源发布平台
 
 ## Phase 15: 全面视觉优化
-- [ ] 重新设计地图布局：平衡各房间大小，扩大走廊宽度
-- [ ] 增强房间装饰：更多道具、更好的光效
-- [ ] 英雄放大（4x scale）并改善名字标签
-- [ ] 修复 "DUNGEON AWAITS" 覆盖位置
-- [ ] 优化左侧栏英雄列表
-- [ ] 优化头部统计显示
+- [x] 重新设计地图布局：平衡各房间大小，扩大走廊宽度
+- [x] 增强房间装饰：更多道具、更好的光效
+- [x] 英雄放大（4x scale）并改善名字标签
+- [x] 修复 "DUNGEON AWAITS" 覆盖位置（移至右下角）
+- [x] 优化左侧栏英雄列表（加宽、HP条、等级标签）
+- [x] 优化头部统计显示（彩色标签）
 
 ## Phase 16: 大城堡 Tilemap 重做
-- [ ] 搜索并下载免费俯视角地牢 tileset 素材
-- [ ] 设计新的 tilemap 布局（5区域紧密拼接，无黑色间隙，共享墙壁）
-- [ ] 实现 tilemap 渲染系统（地板/墙壁/装饰物 tile 铺满画布）
-- [ ] 实现 BFS 逐格寻路和英雄走路动画
-- [ ] 实现骑士生命周期（出生→任务→战斗→休息→消失，按action动态切换）
-- [ ] 画布自适应浏览器窗口
-- [ ] 集成 NPC（Lord Wizard、Guardian、Witch）到新地图
-- [ ] 走廊连接区域（背景填满，无黑色间隙）
-- [ ] 测试和修复
+- [x] 用 AI 生成俯视角像素艺术地下城背景图（5区域无缝拼接）
+- [x] 设计新的布局（5区域紧密拼接，无黑色间隙，共享墙壁）
+- [x] 实现 AI 背景图渲染（drawImage 铺满画布，动态效果叠加）
+- [x] 实现 BFS 逐格寻路和英雄走路动画
+- [x] 实现骑士生命周期（出生→任务→战斗→休息→消失，按action动态切换）
+- [x] 画布自适应浏览器窗口
+- [x] 集成 NPC（Lord Wizard、Guardian、Witch）到新地图
+- [x] 背景填满，无黑色间隙
+- [x] 测试和修复
+
+## Phase 17: 位置与交互优化
+- [x] 确认英雄出生位置在 Spawn 区域正中心（移除随机偏移，精确在 ROOM_CENTERS.spawn）
+- [x] 确认 Boss（Lord Wizard）在 Boss Arena 正中心（修复 TS*8 偏移，改用 BOSS_SCREEN_X 常量）
+- [x] 确认 Guardian NPC 在 Dungeon Main 正中心（移除 sin 随机摇摆，改用 GUARDIAN_SCREEN_X 常量）
+- [x] 确认 Witch NPC 在 Witch Shop 正中心（修复 ph*0.55 偏移，改用 WITCH_SCREEN_X 常量）
+- [x] 英雄面向 NPC（攻击 Boss 时面向 Boss，购买时面向 Witch，对话时面向 Guardian）
+- [x] 攻击动画：英雄走到 Boss 左前方（col-5），面向右方（朝向 Boss）进行战斗
+- [x] 购买动画：英雄走到 Witch 左前方（col-3），面向右方（朝向 Witch）进行交互
+- [x] 对话动画：英雄走到 Guardian 附近，动态面向 Guardian
+- [x] 服务端 ROOM_POSITIONS 更新为与新地图布局匹配的正确坐标
+- [x] Demo 英雄增加 4 个（含 shop/rest 状态），展示所有区域
+- [ ] 找到适合的开源发布平台

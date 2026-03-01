@@ -75,9 +75,12 @@ function roomCenter(room: typeof ROOMS[RoomId]): { col: number; row: number } {
 
 const ROOM_CENTERS: Record<RoomId, { col: number; row: number }> = {
   spawn:   roomCenter(ROOMS.spawn),
-  dungeon: roomCenter(ROOMS.dungeon),
-  boss:    roomCenter(ROOMS.boss),
-  shop:    roomCenter(ROOMS.shop),
+  // Dungeon: heroes stop 2 tiles to the LEFT of Guardian center (in front of Guardian for dialogue)
+  dungeon: { col: Math.floor((ROOMS.dungeon.c0 + ROOMS.dungeon.c1) / 2) - 2, row: Math.floor((ROOMS.dungeon.r0 + ROOMS.dungeon.r1) / 2) },
+  // Boss: heroes stop 5 tiles to the LEFT of boss center (in front of boss for combat)
+  boss:    { col: Math.floor((ROOMS.boss.c0 + ROOMS.boss.c1) / 2) - 5, row: Math.floor((ROOMS.boss.r0 + ROOMS.boss.r1) / 2) },
+  // Shop: heroes stop 3 tiles to the LEFT of witch center (in front of witch for shopping)
+  shop:    { col: Math.floor((ROOMS.shop.c0 + ROOMS.shop.c1) / 2) - 3, row: Math.floor((ROOMS.shop.r0 + ROOMS.shop.r1) / 2) },
   rest:    roomCenter(ROOMS.rest),
 };
 
@@ -212,6 +215,9 @@ const MV = {
 
   benchStatic: "/sprites/mv/savepoint/goddess_bench_static.png",
   benchAnim:   "/sprites/mv/savepoint/goddess_bench_saving_effect.png",
+
+  hitEffect:   "/sprites/mv/effects/hit_effect_anim.png",
+  itemOrb:     "/sprites/mv/npcs/item_sell_orb.png",
 };
 
 // ─── Image cache ──────────────────────────────────────────────────────────────
@@ -300,7 +306,7 @@ function drawTorch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: nu
 
 // ─── NPC helpers ──────────────────────────────────────────────────────────────
 
-function drawWitch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
+function drawWitch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number, heroesPresent = false) {
   const frame = Math.floor(tick / 8) % 10;
   drawSprite(ctx, MV.witchIdle, 32, 32, frame, x, y, 3.5);
   const mg = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, 45);
@@ -310,17 +316,78 @@ function drawWitch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: nu
   ctx.beginPath();
   ctx.arc(x, y + 10, 45, 0, Math.PI * 2);
   ctx.fill();
+
+  if (heroesPresent) {
+    // Show item sell orb floating above witch when heroes are shopping
+    const orbY = y - 60 + Math.sin(tick * 0.08) * 8;
+    drawSprite(ctx, MV.itemOrb, 16, 32, 0, x + 30, orbY, 2.5);
+    // Shop sparkle effect
+    for (let i = 0; i < 4; i++) {
+      const angle = (tick * 0.06 + i * Math.PI / 2);
+      const r = 35 + Math.sin(tick * 0.1 + i) * 8;
+      ctx.fillStyle = `rgba(255,200,50,${0.5 + Math.sin(tick * 0.15 + i) * 0.3})`;
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(angle) * r, y + Math.sin(angle) * r * 0.5 - 10, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // "SHOP" label above witch
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.beginPath();
+    ctx.roundRect(x - 28, y - 90, 56, 22, 5);
+    ctx.fill();
+    ctx.fillStyle = "#FFAA44";
+    ctx.font = "bold 11px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("SHOP!", x, y - 73);
+    ctx.textAlign = "left";
+  }
 }
 
-function drawGuardian(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
-  const frame = Math.floor(tick / 6) % 12;
-  drawSprite(ctx, MV.guardianIdle, 16, 16, frame, x, y, 3.5);
+function drawGuardian(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number, heroesPresent: boolean) {
+  if (heroesPresent) {
+    // Guardian reacts to hero presence - uses attack/alert animation (576x32, 18 frames, frameW=32)
+    const frame = Math.floor(tick / 6) % 18;
+    drawSprite(ctx, MV.guardianAttack, 32, 32, frame, x, y, 3.5);
+    // Alert glow
+    const ag = ctx.createRadialGradient(x, y, 0, x, y, 50);
+    ag.addColorStop(0, `rgba(255,200,50,${0.15 + Math.sin(tick * 0.1) * 0.07})`);
+    ag.addColorStop(1, "rgba(255,150,0,0)");
+    ctx.fillStyle = ag;
+    ctx.beginPath();
+    ctx.arc(x, y, 50, 0, Math.PI * 2);
+    ctx.fill();
+    // Speech bubble / talk indicator
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.beginPath();
+    ctx.roundRect(x - 22, y - 75, 44, 22, 5);
+    ctx.fill();
+    ctx.fillStyle = "#FFD700";
+    ctx.font = "bold 12px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("...", x, y - 58);
+    ctx.textAlign = "left";
+  } else {
+    // Guardian idle - 12 frames, frameW=16
+    const frame = Math.floor(tick / 6) % 12;
+    drawSprite(ctx, MV.guardianIdle, 16, 16, frame, x, y, 3.5);
+  }
 }
+
+// ─── NPC/Boss screen positions (pixel coords, used for hero facing direction) ──
+// Boss is at center of boss room
+const BOSS_SCREEN_X = Math.floor((ROOMS.boss.c0 + ROOMS.boss.c1) / 2) * TS + TS / 2;
+const BOSS_SCREEN_Y = Math.floor((ROOMS.boss.r0 + ROOMS.boss.r1) / 2) * TS + TS / 2;
+// Guardian is at center of dungeon room
+const GUARDIAN_SCREEN_X = Math.floor((ROOMS.dungeon.c0 + ROOMS.dungeon.c1) / 2) * TS + TS / 2;
+const GUARDIAN_SCREEN_Y = Math.floor((ROOMS.dungeon.r0 + ROOMS.dungeon.r1) / 2) * TS + TS / 2;
+// Witch is at center of shop room
+const WITCH_SCREEN_X = Math.floor((ROOMS.shop.c0 + ROOMS.shop.c1) / 2) * TS + TS / 2;
+const WITCH_SCREEN_Y = Math.floor((ROOMS.shop.r0 + ROOMS.shop.r1) / 2) * TS + TS / 2;
 
 function drawBoss(ctx: CanvasRenderingContext2D, tick: number, heroesInRoom: Hero[]) {
-  const bossRoom = ROOMS.boss;
-  const bx = (bossRoom.c0 + bossRoom.c1) * TS / 2 + TS * 8;
-  const by = (bossRoom.r0 + bossRoom.r1) * TS / 2;
+  // Boss is exactly at the center of the boss room
+  const bx = BOSS_SCREEN_X;
+  const by = BOSS_SCREEN_Y;
   const isFighting = heroesInRoom.some(h => h.state === "fighting" || h.state === "casting");
 
   if (isFighting) {
@@ -406,8 +473,8 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const cnt = heroes.filter(h => h.room === "church").length;
     drawRoomLabel(ctx, "⛪ HOLY SANCTUARY", "#AA88FF", px, py, cnt, "#FFFFFF");
 
-    // Spawn portal glow
-    const bx = px + pw * 0.5, by = py + ph * 0.55;
+    // Spawn portal glow - at exact center of spawn room
+    const bx = px + pw * 0.5, by = py + ph * 0.5;
     const pg = ctx.createRadialGradient(bx, by, 0, bx, by, 70);
     pg.addColorStop(0, `rgba(120,80,255,${0.25 + Math.sin(tick * 0.06) * 0.1})`);
     pg.addColorStop(0.5, `rgba(80,40,200,${0.12 + Math.sin(tick * 0.04) * 0.06})`);
@@ -430,8 +497,9 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const cnt = heroes.filter(h => h.room === "corridor").length;
     drawRoomLabel(ctx, "📜 DUNGEON MAIN", "#88AAFF", px, py, cnt, "#FFFFFF");
 
-    const guardX = px + pw * 0.5 + Math.floor(Math.sin(tick * 0.02) * 30);
-    drawGuardian(ctx, guardX, py + ph * 0.65, tick);
+    // Guardian fixed at room center - reacts when heroes are in dungeon
+    const dungeonHeroes = heroes.filter(h => h.room === "corridor");
+    drawGuardian(ctx, GUARDIAN_SCREEN_X, GUARDIAN_SCREEN_Y, tick, dungeonHeroes.length > 0);
     drawTorch(ctx, px + pw * 0.15, py + ph * 0.35, tick, true);
     drawTorch(ctx, px + pw * 0.85, py + ph * 0.35, tick, true);
   }
@@ -469,7 +537,9 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const cnt = heroes.filter(h => h.room === "shop").length;
     drawRoomLabel(ctx, "🔮 WITCH SHOP", "#FFAA44", px, py, cnt, "#FFAA44");
 
-    drawWitch(ctx, px + pw * 0.5, py + ph * 0.55, tick);
+    // Witch fixed at room center - reacts when heroes are shopping
+    const shopHeroes = heroes.filter(h => h.room === "shop");
+    drawWitch(ctx, WITCH_SCREEN_X, WITCH_SCREEN_Y, tick, shopHeroes.length > 0);
     drawTorch(ctx, px + pw * 0.15, py + ph * 0.8, tick);
     drawTorch(ctx, px + pw * 0.85, py + ph * 0.8, tick);
   }
@@ -561,9 +631,11 @@ function getPlayerSprite(state: HeroState, isMoving: boolean, facingLeft: boolea
   if (isMoving) {
     return { src: facingLeft ? MV.playerRunL : MV.playerRunR, frameW: 16, frameCount: 8, fps: 12 };
   }
+  // Only use attack animation when actually fighting the boss
   if (state === "fighting" || state === "casting") {
     return { src: facingLeft ? MV.playerAttackL : MV.playerAttackR, frameW: 16, frameCount: 10, fps: 10 };
   }
+  // Talking, shopping, resting → idle pose (hero faces NPC, not attacking)
   return { src: facingLeft ? MV.playerIdleL : MV.playerIdleR, frameW: 16, frameCount: 6, fps: 6 };
 }
 
@@ -654,6 +726,7 @@ function drawHero(
   // State effects
   if (!mv.isMoving) {
     if (state === "fighting") {
+      // Attack particles orbiting hero during boss fight
       for (let i = 0; i < 5; i++) {
         const angle = tick * 0.09 + (i * Math.PI * 2) / 5;
         ctx.fillStyle = "#FF4444";
@@ -662,16 +735,63 @@ function drawHero(
         ctx.arc(x + Math.cos(angle) * 30, y + Math.sin(angle) * 18, 3.5, 0, Math.PI * 2);
         ctx.fill();
       }
+      // Hit effect sprite flashing near hero
+      if (Math.floor(tick / 8) % 3 === 0) {
+        ctx.globalAlpha = alpha * 0.85;
+        const hf = Math.floor(tick / 4) % 4;
+        drawSprite(ctx, MV.hitEffect, 16, 16, hf, x + 28, y - 5, 2.5);
+      }
     }
-    if (state === "casting" || state === "shopping") {
+    if (state === "casting") {
+      // Magic particles for casting
       for (let i = 0; i < 6; i++) {
         const angle = tick * 0.07 + (i * Math.PI * 2) / 6;
-        ctx.fillStyle = state === "casting" ? "#AA44FF" : "#FFAA44";
+        ctx.fillStyle = "#AA44FF";
         ctx.globalAlpha = alpha * (0.7 + Math.sin(tick * 0.15 + i) * 0.25);
         ctx.beginPath();
         ctx.arc(x + Math.cos(angle) * 28, y + Math.sin(angle) * 17, 3, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
+    if (state === "shopping") {
+      // Gold coin sparkles for shopping
+      for (let i = 0; i < 4; i++) {
+        const angle = tick * 0.08 + (i * Math.PI / 2);
+        ctx.fillStyle = "#FFD700";
+        ctx.globalAlpha = alpha * (0.7 + Math.sin(tick * 0.18 + i) * 0.25);
+        ctx.beginPath();
+        ctx.arc(x + Math.cos(angle) * 22, y + Math.sin(angle) * 14 - 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Floating coin above hero
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = "#FFD700";
+      ctx.font = "bold 14px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("¥", x, y - 68 + Math.sin(tick * 0.07) * 5);
+      ctx.textAlign = "left";
+    }
+    if (state === "idle" && mv.lastKnownRoom === "dungeon") {
+      // Speech bubble for idle heroes in dungeon (talking to Guardian)
+      ctx.globalAlpha = alpha;
+      const bubbleX = x + 18;
+      const bubbleY = y - 72;
+      ctx.fillStyle = "rgba(0,0,0,0.8)";
+      ctx.beginPath();
+      ctx.roundRect(bubbleX - 18, bubbleY - 10, 36, 20, 6);
+      ctx.fill();
+      ctx.strokeStyle = "#88CCFF";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(bubbleX - 18, bubbleY - 10, 36, 20, 6);
+      ctx.stroke();
+      // Animated dots
+      const dotCount = Math.floor(tick / 20) % 4;
+      ctx.fillStyle = "#88CCFF";
+      ctx.font = "bold 12px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(".".repeat(dotCount + 1), bubbleX, bubbleY + 5);
+      ctx.textAlign = "left";
     }
     if (state === "resting") {
       ctx.globalAlpha = alpha;
@@ -779,14 +899,14 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
     const currentIds = new Set(heroes.map(h => h.id));
     const prevIds = prevHeroIdsRef.current;
 
-    // New heroes → spawn at sanctuary
+    // New heroes → spawn at sanctuary center (exact center, no random offset)
     for (const hero of heroes) {
       if (!movements.has(hero.id)) {
         const spawnTile = ROOM_CENTERS.spawn;
         const spawnPx = tileCenter(spawnTile.col, spawnTile.row);
         movements.set(hero.id, {
-          px: spawnPx.x + (Math.random() - 0.5) * TS * 2,
-          py: spawnPx.y + (Math.random() - 0.5) * TS,
+          px: spawnPx.x,
+          py: spawnPx.y,
           path: [],
           pathIdx: 0,
           col: spawnTile.col,
@@ -869,7 +989,7 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
           if (mv.pathIdx >= mv.path.length) {
             mv.isMoving = false;
             mv.lastKnownRoom = mv.targetRoom;
-            // Spread heroes in room
+            // Spread heroes in room (offset from NPC/Boss position)
             const heroesInRoom = heroes.filter(h => heroRoomToRoomId(h.room) === mv.targetRoom);
             const idx = heroesInRoom.findIndex(h => h.id === hero.id);
             if (heroesInRoom.length > 1 && idx >= 0) {
@@ -880,6 +1000,24 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
               const col = idx % cols;
               const spreadX = w.c0 * TS + TS + (cols > 1 ? (col / (cols - 1)) * usableW : usableW / 2);
               mv.px = spreadX;
+            }
+            // Face toward NPC/Boss after arriving
+            // Heroes stop to the LEFT of boss/NPC, so they face RIGHT toward them
+            if (mv.targetRoom === "boss") {
+              // Heroes are to the left of boss, so face right (toward boss)
+              mv.facingLeft = false;
+            } else if (mv.targetRoom === "shop") {
+              // Heroes are to the left of witch, so face right (toward witch)
+              mv.facingLeft = false;
+            } else if (mv.targetRoom === "dungeon") {
+              // Heroes face toward guardian (dynamic based on position)
+              mv.facingLeft = mv.px > GUARDIAN_SCREEN_X;
+            } else if (mv.targetRoom === "spawn") {
+              // In sanctuary, face right (toward the exit)
+              mv.facingLeft = false;
+            } else if (mv.targetRoom === "rest") {
+              // In rest area, face right
+              mv.facingLeft = false;
             }
           }
         } else {

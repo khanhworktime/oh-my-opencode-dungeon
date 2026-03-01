@@ -74,12 +74,19 @@ export interface ClaudeSkill {
 
 // ─── Room Positions ───────────────────────────────────────────────────────────
 
+// Room positions match the canvas layout:
+// Canvas: 70 cols × 40 rows, each tile = 48px (TILE=16, SCALE=3)
+// spawn: cols 0-19, rows 0-19 → center ~(456, 456)
+// dungeon: cols 20-39, rows 0-19 → center ~(1416, 456)
+// boss: cols 40-69, rows 0-39 → center ~(2616, 936)
+// shop: cols 0-19, rows 20-39 → center ~(456, 1416)
+// rest: cols 20-39, rows 20-39 → center ~(1416, 1416)
 export const ROOM_POSITIONS: Record<DungeonRoom, { x: number; y: number }> = {
-  boss_arena: { x: 400, y: 280 },
-  church:     { x: 155, y: 185 },
-  shop:       { x: 645, y: 185 },
-  rest_area:  { x: 400, y: 490 },
-  corridor:   { x: 400, y: 380 },
+  boss_arena: { x: 2616, y: 936 },
+  church:     { x: 456,  y: 456 },
+  shop:       { x: 456,  y: 1416 },
+  rest_area:  { x: 1416, y: 1416 },
+  corridor:   { x: 1416, y: 456 },
 };
 
 // ─── Paths ────────────────────────────────────────────────────────────────────

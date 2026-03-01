@@ -182,9 +182,7 @@ function createHero(agentId: number, transcriptPath: string, projectRealPath: st
     projectPath: projectRealPath,
     sessionFile: transcriptPath,
   };
-  // Add slight random offset so heroes don't stack
-  hero.position.x += (Math.random() - 0.5) * 40;
-  hero.position.y += (Math.random() - 0.5) * 30;
+  // No random offset - frontend DungeonMap handles positioning via BFS pathfinding
   heroes.set(agentId, hero);
   persistHeroes();
   return hero;
@@ -193,9 +191,8 @@ function createHero(agentId: number, transcriptPath: string, projectRealPath: st
 function updateHeroState(hero: Hero, state: HeroState, room: DungeonRoom) {
   hero.state = state;
   hero.room = room;
+  // Use exact room center position - frontend DungeonMap handles smooth movement via BFS
   hero.position = { ...ROOM_POSITIONS[room] };
-  hero.position.x += (Math.random() - 0.5) * 40;
-  hero.position.y += (Math.random() - 0.5) * 30;
 }
 
 function setHeroResting(heroId: number) {
@@ -614,10 +611,15 @@ function broadcast(message: { type: string; payload: unknown }) {
 // ─── Client Message Handling ──────────────────────────────────────────────────
 
 function createDemoHeroes(): Hero[] {
-  const configs: Array<{ name: string; heroClass: HeroClass; state: HeroState; room: DungeonRoom; projectPath: string }> = [
-    { name: "warrior-001", heroClass: "warrior", state: "fighting", room: "boss_arena", projectPath: "/demo/my-project" },
-    { name: "mage-002", heroClass: "mage", state: "casting", room: "boss_arena", projectPath: "/demo/web-app" },
-    { name: "cleric-003", heroClass: "cleric", state: "resting", room: "church", projectPath: "/demo/api-service" },
+  const configs: Array<{ name: string; heroClass: HeroClass; state: HeroState; room: DungeonRoom; projectPath: string; tools: Array<{id: string; name: string; status: string}> }> = [
+    { name: "warrior-001", heroClass: "warrior", state: "fighting", room: "boss_arena", projectPath: "/demo/my-project",
+      tools: [{ id: "t0", name: "Bash", status: "⚔️ Running: npm run build" }] },
+    { name: "mage-002", heroClass: "mage", state: "casting", room: "boss_arena", projectPath: "/demo/web-app",
+      tools: [{ id: "t1", name: "WebSearch", status: "🔍 Searching: React hooks best practices" }] },
+    { name: "cleric-003", heroClass: "cleric", state: "shopping", room: "shop", projectPath: "/demo/api-service",
+      tools: [{ id: "t2", name: "Think", status: "🔮 Planning: architecture design" }] },
+    { name: "warrior-004", heroClass: "warrior", state: "resting", room: "rest_area", projectPath: "/demo/backend",
+      tools: [] },
   ];
   return configs.map((d, i) => ({
     id: 9000 + i,
@@ -626,20 +628,16 @@ function createDemoHeroes(): Hero[] {
     state: d.state,
     position: { ...ROOM_POSITIONS[d.room] },
     room: d.room,
-    activeTools: d.state === "fighting"
-      ? [{ id: `demo-tool-${i}`, name: "Bash", status: "⚔️ Running: npm run build", startedAt: Date.now() }]
-      : d.state === "casting"
-      ? [{ id: `demo-tool-${i}`, name: "WebSearch", status: "🔍 Searching: React hooks best practices", startedAt: Date.now() }]
-      : [],
+    activeTools: d.tools.map(t => ({ ...t, startedAt: Date.now() - i * 5000 })),
     subAgentTools: {},
     toolCount: { bash: 5 + i, read: 3 + i, write: 2 + i, web: 1 + i },
     isWaiting: d.state === "resting",
     skills: [],
     level: i + 1,
     exp: 50 * (i + 1),
-    hp: 80 + i * 10,
+    hp: 80 + i * 5,
     maxHp: 100,
-    mp: 60 + i * 15,
+    mp: 60 + i * 10,
     maxMp: 100,
     projectPath: d.projectPath,
     sessionFile: "",
