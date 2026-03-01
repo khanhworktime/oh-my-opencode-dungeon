@@ -28,7 +28,6 @@ Claude Dungeon connects to your local Claude Code sessions and visualizes every 
 
 - Node.js 18+
 - pnpm (`npm install -g pnpm`)
-- A running MySQL/TiDB database (or use a free [PlanetScale](https://planetscale.com) / [TiDB Cloud](https://tidbcloud.com) instance)
 
 ### Installation
 
@@ -36,30 +35,6 @@ Claude Dungeon connects to your local Claude Code sessions and visualizes every 
 git clone https://github.com/your-username/claude-dungeon
 cd claude-dungeon
 pnpm install
-```
-
-### Configuration
-
-Copy the example environment file and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-Required variables:
-
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | MySQL connection string |
-| `JWT_SECRET` | Any random secret string (e.g. `openssl rand -hex 32`) |
-
-### Run
-
-```bash
-# Push database schema
-pnpm db:push
-
-# Start development server
 pnpm dev
 ```
 
@@ -76,11 +51,11 @@ The app detects active sessions by monitoring file modification times. Heroes di
 ```
 client/          React 19 + Tailwind 4 frontend
   src/
-    components/  DungeonMap (Canvas), HeroPanel, SkillsPanel, ConfigPanel
+    components/  DungeonMap (Canvas), HeroPanel, SkillsPanel
     hooks/       useHeroSocket, useAuth
     lib/         dungeonConfig, transcriptParser
 server/          Express + tRPC backend
-  routers/       agents, skills, config
+  routers/       agents, skills
   websocket.ts   Real-time hero state management
   bridge.ts      REST API for external data push
 drizzle/         Database schema & migrations
@@ -127,7 +102,7 @@ Claude Dungeon includes a built-in UI for managing Claude Code skills:
 
 ## Remote Bridge (Optional)
 
-If you're running Claude Code on a remote server, use the included bridge script to push data to a hosted Claude Dungeon instance:
+If you're running Claude Code on a remote server, use the included bridge script to push hero state to a hosted Claude Dungeon instance:
 
 ```bash
 # Download
@@ -135,11 +110,8 @@ curl -O https://your-instance.example.com/bridge/claude-dungeon-bridge.mjs
 
 # Run
 CLAUDE_DUNGEON_SERVER=https://your-instance.example.com \
-CLAUDE_DUNGEON_API_KEY=cpab_xxx \
 node claude-dungeon-bridge.mjs
 ```
-
-Get your API key from the **Config** panel in the web UI.
 
 ## Tech Stack
 
@@ -147,9 +119,7 @@ Get your API key from the **Config** panel in the web UI.
 |-------|-----------|
 | Frontend | React 19, Tailwind CSS 4, Canvas API |
 | Backend | Express 4, tRPC 11, Node.js |
-| Database | MySQL / TiDB (via Drizzle ORM) |
 | Real-time | WebSocket (ws) |
-| Auth | Manus OAuth (optional) |
 | Sprites | Another Metroidvania Asset Pack Vol. 1 |
 | Pathfinding | BFS on tile grid (wall-aware) |
 
