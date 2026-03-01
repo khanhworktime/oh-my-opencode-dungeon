@@ -108,3 +108,9 @@ temp/
 
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
+
+# Internal development docs (not for public repo)
+todo.md
+ideas.md
+ASSETS_NOTES.md
+.manus-logs/

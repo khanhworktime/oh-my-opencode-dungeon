@@ -27,7 +27,7 @@ import {
 const HOME_DIR = os.homedir();
 const CLAUDE_DIR = path.join(HOME_DIR, ".claude");
 const CLAUDE_PROJECTS_DIR = path.join(CLAUDE_DIR, "projects");
-const DATA_DIR = path.join(HOME_DIR, ".claude-pixel-agent");
+const DATA_DIR = path.join(HOME_DIR, ".claude-dungeon");
 const HEROES_PATH = path.join(DATA_DIR, "heroes.json");
 const POLL_INTERVAL_MS = 1000;
 const IDLE_DELAY_MS = 10000;

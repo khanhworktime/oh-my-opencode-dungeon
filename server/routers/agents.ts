@@ -87,7 +87,7 @@ const HOME_DIR = os.homedir();
 const CLAUDE_DIR = path.join(HOME_DIR, ".claude");
 const CLAUDE_PROJECTS_DIR = path.join(CLAUDE_DIR, "projects");
 const GLOBAL_SKILLS_DIR = path.join(CLAUDE_DIR, "skills");
-const DATA_DIR = path.join(HOME_DIR, ".claude-pixel-agent");
+const DATA_DIR = path.join(HOME_DIR, ".claude-dungeon");
 const HEROES_PATH = path.join(DATA_DIR, "heroes.json");
 const CONFIG_PATH = path.join(DATA_DIR, "config.json");
 
@@ -678,7 +678,7 @@ export const agentsRouter = router({
 
   // ── Bridge API Key ────────────────────────────────────────────────────────────
   bridgeApiKey: publicProcedure.query(() => {
-    // Read bridge API key from ~/.claude-pixel-agent/config.json
+    // Read bridge API key from ~/.claude-dungeon/config.json
     const bridgeConfigPath = path.join(DATA_DIR, "config.json");
     try {
       if (fs.existsSync(bridgeConfigPath)) {

@@ -5,7 +5,7 @@
  * and POSTs hero updates to this endpoint. This allows the cloud-hosted web app
  * to display real-time Claude Code activity without direct filesystem access.
  *
- * Security: protected by a shared API key stored in ~/.claude-pixel-agent/config.json
+ * Security: protected by a shared API key stored in ~/.claude-dungeon/config.json
  */
 
 import { Router, Request, Response } from "express";
@@ -13,7 +13,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 
-const DATA_DIR = path.join(os.homedir(), ".claude-pixel-agent");
+const DATA_DIR = path.join(os.homedir(), ".claude-dungeon");
 const CONFIG_PATH = path.join(DATA_DIR, "config.json");
 
 // ─── Config helpers ───────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-# Claude Pixel Agent Web - TODO
+# Claude Dungeon - TODO
 
 ## Phase 1: 地下城像素艺术资源生成
 - [x] 生成地下城背景地图（固定布局：Boss房、商店、牧师区、休息区）
@@ -67,7 +67,7 @@
 - [x] 后端 Skills API：创建新技能（写入 SKILL.md）
 - [x] 后端 Skills API：编辑技能内容
 - [x] 后端 Skills API：删除技能
-- [x] 后端配置 API：读写 ~/.claude-pixel-agent/config.json
+- [x] 后端配置 API：读写 ~/.claude-dungeon/config.json
 - [x] 配置页面：设置 Claude Code 根目录路径
 - [x] 配置页面：连接状态诊断（是否检测到 ~/.claude/projects/）
 - [x] Skills 管理页面：全局技能列表 + 创建/编辑/删除

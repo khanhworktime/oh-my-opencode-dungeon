@@ -8,7 +8,7 @@ import path from "path";
 import os from "os";
 
 // Use a temp dir for testing
-const TEST_DIR = path.join(os.tmpdir(), "claude-pixel-agent-test-" + Date.now());
+const TEST_DIR = path.join(os.tmpdir(), "claude-dungeon-test-" + Date.now());
 const TEST_CONFIG_PATH = path.join(TEST_DIR, "config.json");
 
 // Mock the DATA_DIR by temporarily overriding the module
