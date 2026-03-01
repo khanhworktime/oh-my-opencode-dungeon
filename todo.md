@@ -96,6 +96,12 @@
 - [x] 英雄只在 Claude Code 活跃进程存在时出现（只处理 5 分钟内有修改的文件）
 - [x] Claude Code 退出后英雄消失（10 分钟无活动后自动移除）
 - [x] 修复地图黑屏问题（添加 crossOrigin="anonymous" 解决 CORS 问题）
-- [ ] 整合新素材包（等待用户 push 到 GitHub）
+- [x] 整合新素材包（已拉取并复制到 client/public/sprites）
 - [ ] 修复 bridge API key 不匹配问题（统一使用 bridge.ts 的 getOrCreateApiKey）
 - [ ] 修复 Skills 无法新增的问题
+
+## Phase 12: 前端视觉全面升级
+- [x] 拉取新素材包并评估可用资源
+- [x] 修复英雄退出检测：缩短超时到 2 分钟 + 15 秒进程检测
+- [x] 整合新素材包到地图和英雄渲染（骨士精灵图 + 女巫商人 NPC + 火把/蜡烛装饰）
+- [x] 全面提升前端视觉效果（平铺背景贴图、真实素材替换像素绘制）

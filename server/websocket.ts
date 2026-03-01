@@ -34,7 +34,11 @@ const IDLE_DELAY_MS = 10000;
 // A session file must have been modified within this window to be considered "active"
 const ACTIVE_SESSION_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 // After this long with no file changes, remove the hero entirely
-const SESSION_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+// Claude Code writes to the transcript every few seconds while active.
+// 2 minutes without writes = session almost certainly ended.
+const SESSION_EXPIRY_MS = 2 * 60 * 1000; // 2 minutes
+// How often to check if Claude Code processes are still alive
+const PROCESS_CHECK_INTERVAL_MS = 15 * 1000; // 15 seconds
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +55,7 @@ const expiryTimers = new Map<number, NodeJS.Timeout>(); // heroId → expiry tim
 let nextHeroId = 1;
 let projectsRootWatcher: fs.FSWatcher | null = null;
 let rootPollTimer: NodeJS.Timeout | null = null;
+let processCheckTimer: NodeJS.Timeout | null = null;
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
 
@@ -490,6 +495,57 @@ function watchProjectDir(projectDirPath: string, encodedName: string) {
 }
 
 /**
+ * Check if any Claude Code processes are still running.
+ * If no claude processes exist and a hero's file hasn't changed recently,
+ * remove the hero immediately rather than waiting for the full expiry timeout.
+ */
+function checkClaudeProcesses() {
+  if (heroes.size === 0) return;
+
+  import("child_process").then(({ execSync }) => {
+    let claudeRunning = false;
+    try {
+      // Check for running claude processes (works on macOS and Linux)
+      const result = execSync('pgrep -f "claude" 2>/dev/null || true', { encoding: 'utf-8', timeout: 3000 });
+      claudeRunning = result.trim().length > 0;
+    } catch {
+      claudeRunning = true; // Assume running if we can't check
+    }
+
+    if (!claudeRunning) {
+      // No claude processes running — remove all heroes immediately
+      const heroIds = [...heroes.keys()];
+      for (const heroId of heroIds) {
+        removeHero(heroId);
+      }
+      console.log('[File Monitor] No Claude Code processes detected, removed all heroes');
+    } else {
+      // Claude is running somewhere, but check each hero's file recency
+      const now = Date.now();
+      const STALE_THRESHOLD_MS = 90 * 1000; // 90 seconds without file changes
+      for (const [heroId, lastActivity] of fileLastActivity.entries()) {
+        if (now - lastActivity > STALE_THRESHOLD_MS) {
+          // Check if the file itself has been modified recently
+          const hero = heroes.get(heroId);
+          if (hero?.sessionFile) {
+            try {
+              const stat = fs.statSync(hero.sessionFile);
+              if (now - stat.mtimeMs > STALE_THRESHOLD_MS) {
+                removeHero(heroId);
+                console.log(`[File Monitor] Stale session removed: ${hero.name}`);
+              }
+            } catch {
+              // File deleted — remove hero
+              removeHero(heroId);
+            }
+          }
+        }
+      }
+    }
+  }).catch(() => {});
+}
+
+/**
  * Watch ~/.claude/projects/ for new project directories
  */
 function watchProjectsRoot() {
@@ -637,6 +693,10 @@ export function initializeWebSocket(server: unknown) {
 
   // Start monitoring Claude Code projects
   watchProjectsRoot();
+
+  // Periodically check if Claude Code processes are still alive
+  // This provides faster hero removal when terminal is closed
+  processCheckTimer = setInterval(() => checkClaudeProcesses(), PROCESS_CHECK_INTERVAL_MS);
 }
 
 export function getHeroes(): Hero[] {
