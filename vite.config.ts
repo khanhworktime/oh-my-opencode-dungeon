@@ -170,6 +170,11 @@ export default defineConfig({
   },
   server: {
     host: true,
+    hmr: {
+      protocol: "wss",
+      host: "3000-iisbuodokaoa5ge2j7xtc-89e73e90.us2.manus.computer",
+      port: 443,
+    },
     allowedHosts: [
       ".manuspre.computer",
       ".manus.computer",
