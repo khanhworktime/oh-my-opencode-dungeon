@@ -108,22 +108,29 @@ function projectNameFromPath(realPath: string): string {
 
 function toolNameToRoom(toolName: string): DungeonRoom {
   const lower = toolName.toLowerCase();
+  // Combat actions → Boss Arena (executing, writing, building)
   if (lower.includes("bash") || lower.includes("execute") || lower.includes("run")) return "boss_arena";
   if (lower.includes("write") || lower.includes("edit") || lower.includes("create")) return "boss_arena";
-  if (lower.includes("web") || lower.includes("search") || lower.includes("fetch")) return "boss_arena";
-  if (lower.includes("read") || lower.includes("view")) return "boss_arena";
   if (lower.includes("task") || lower.includes("agent")) return "boss_arena";
+  // Research / scouting → Merchant Shop (gathering intel, buying potions)
+  if (lower.includes("web") || lower.includes("search") || lower.includes("fetch")) return "shop";
   if (lower.includes("plan") || lower.includes("think")) return "shop";
+  // Reading / studying → Dungeon Main (exploring, scouting)
+  if (lower.includes("read") || lower.includes("view") || lower.includes("list") || lower.includes("glob")) return "corridor";
   return "boss_arena";
 }
 
 function toolNameToState(toolName: string): HeroState {
   const lower = toolName.toLowerCase();
+  // Heavy execution → fighting
   if (lower.includes("bash") || lower.includes("execute")) return "fighting";
-  if (lower.includes("write") || lower.includes("edit")) return "fighting";
-  if (lower.includes("web") || lower.includes("search")) return "casting";
-  if (lower.includes("read") || lower.includes("view")) return "casting";
+  if (lower.includes("write") || lower.includes("edit") || lower.includes("create")) return "fighting";
   if (lower.includes("task") || lower.includes("agent")) return "fighting";
+  // Research & planning → shopping (at merchant)
+  if (lower.includes("web") || lower.includes("search") || lower.includes("fetch")) return "shopping";
+  if (lower.includes("plan") || lower.includes("think")) return "shopping";
+  // Reading → casting (studying scrolls)
+  if (lower.includes("read") || lower.includes("view") || lower.includes("list") || lower.includes("glob")) return "casting";
   return "fighting";
 }
 
@@ -159,8 +166,8 @@ function createHero(agentId: number, transcriptPath: string, projectRealPath: st
     name,
     heroClass: "warrior",
     state: "idle",
-    position: { ...ROOM_POSITIONS.corridor },
-    room: "corridor",
+    position: { ...ROOM_POSITIONS.church },
+    room: "church",
     activeTools: [],
     subAgentTools: {},
     toolCount: { bash: 0, read: 0, write: 0, web: 0 },
@@ -195,6 +202,7 @@ function setHeroResting(heroId: number) {
   const hero = heroes.get(heroId);
   if (!hero) return;
   clearIdleTimer(heroId);
+  // Short idle → rest at tavern, longer idle → return to church (sanctuary)
   updateHeroState(hero, "resting", "rest_area");
   hero.isWaiting = true;
   hero.activeTools = [];

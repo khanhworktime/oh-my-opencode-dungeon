@@ -111,3 +111,12 @@
 - [x] 重写 DungeonMap.tsx：有走廊连接的完整地图布局（Library→Dungeon→Boss Arena，Dungeon→Shop→Tavern）
 - [x] 整合 Lord Wizard Boss、Guardian 敌人、女巫 NPC、火把道具、天花板吊链
 - [x] 18 个 vitest 测试全部通过
+
+## Phase 14: 英雄行为系统全面重构
+- [ ] 研究 Claude Code 所有指令类型并设计动作映射
+- [ ] 英雄走路动画：路径点系统 + 插值移动（房间之间沿走廊行走）
+- [ ] 出生动画：所有英雄在 Holy Sanctuary 出生（传送门/光效）
+- [ ] 消失动画：英雄回到 Holy Sanctuary 后消失（传送门/光效）
+- [ ] 房间逻辑修正：planning → Merchant Shop（买药水）、working → Boss Arena（打Boss）
+- [ ] Claude 指令→动作映射完善
+- [ ] 找到适合的开源发布平台
