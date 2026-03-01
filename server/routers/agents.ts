@@ -12,6 +12,7 @@ import { publicProcedure, router } from "../_core/trpc";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { getOrCreateApiKey } from "../bridge";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -678,25 +679,8 @@ export const agentsRouter = router({
 
   // ── Bridge API Key ────────────────────────────────────────────────────────────
   bridgeApiKey: publicProcedure.query(() => {
-    // Read bridge API key from ~/.claude-dungeon/config.json
-    const bridgeConfigPath = path.join(DATA_DIR, "config.json");
-    try {
-      if (fs.existsSync(bridgeConfigPath)) {
-        const cfg = JSON.parse(fs.readFileSync(bridgeConfigPath, "utf-8"));
-        if (cfg.bridgeApiKey) {
-          return { apiKey: cfg.bridgeApiKey as string, exists: true };
-        }
-      }
-    } catch {}
-    // Generate a new key
-    const key = "cpab_" + Array.from({ length: 32 }, () =>
-      Math.random().toString(36)[2]
-    ).join("");
-    ensureDataDir();
-    const existing = fs.existsSync(bridgeConfigPath)
-      ? JSON.parse(fs.readFileSync(bridgeConfigPath, "utf-8"))
-      : {};
-    fs.writeFileSync(bridgeConfigPath, JSON.stringify({ ...existing, bridgeApiKey: key }, null, 2));
-    return { apiKey: key, exists: false };
+    // Use the same getOrCreateApiKey from bridge.ts to ensure consistency
+    const apiKey = getOrCreateApiKey();
+    return { apiKey, exists: true };
   }),
 });

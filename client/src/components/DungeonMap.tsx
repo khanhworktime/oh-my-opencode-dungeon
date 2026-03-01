@@ -6,9 +6,9 @@ import {
 import type { Hero } from "../hooks/useHeroSocket";
 
 // ─── Canvas Dimensions ────────────────────────────────────────────────────────
-
-const CANVAS_W = 1100;
-const CANVAS_H = 700;
+// 使用更宽的画布，让地图充满整个区域
+const CANVAS_W = 1200;
+const CANVAS_H = 720;
 
 // ─── Metroidvania Sprite Paths ──────────────────────────────────────────────
 
@@ -135,36 +135,39 @@ function drawStaticImg(
 
 // ─── Map Layout ───────────────────────────────────────────────────────────────
 //
-//  [SANCTUARY]──corridor──[DUNGEON]──corridor──[BOSS ARENA]
-//                             │
-//                          corridor
-//                             │
-//                       [MERCHANT SHOP]
-//                             │
-//                          corridor
-//                             │
-//                         [TAVERN]
+//  [SANCTUARY]──corridor──[DUNGEON MAIN]──corridor──[BOSS ARENA (large)]
+//                               │
+//                            corridor
+//                               │
+//                        [MERCHANT SHOP]
+//                               │
+//                            corridor
+//                               │
+//                           [TAVERN]
+//
+// 新布局：更平衡的房间大小，Boss Arena更大，走廊更宽
 
-const ROOM_SANCTUARY  = { x: 20,  y: 60,  w: 220, h: 200 };
-const ROOM_DUNGEON    = { x: 330, y: 60,  w: 240, h: 200 };
-const ROOM_BOSS       = { x: 660, y: 40,  w: 420, h: 300 };
-const ROOM_SHOP       = { x: 330, y: 360, w: 240, h: 160 };
-const ROOM_TAVERN     = { x: 330, y: 580, w: 240, h: 100 };
+const ROOM_SANCTUARY  = { x: 15,  y: 30,  w: 230, h: 190 };
+const ROOM_DUNGEON    = { x: 330, y: 30,  w: 250, h: 190 };
+const ROOM_BOSS       = { x: 670, y: 10,  w: 510, h: 320 };  // 更大的Boss房间
+const ROOM_SHOP       = { x: 330, y: 310, w: 250, h: 160 };
+const ROOM_TAVERN     = { x: 330, y: 545, w: 250, h: 110 };
 
-const CORR_SAN_DUN    = { x: 240, y: 130, w: 90,  h: 60  };
-const CORR_DUN_BOSS   = { x: 570, y: 130, w: 90,  h: 60  };
-const CORR_DUN_SHOP   = { x: 390, y: 260, w: 60,  h: 100 };
-const CORR_SHOP_TAV   = { x: 390, y: 520, w: 60,  h: 60  };
+// 走廊（更宽）
+const CORR_SAN_DUN    = { x: 245, y: 110, w: 85,  h: 60  };
+const CORR_DUN_BOSS   = { x: 580, y: 110, w: 90,  h: 60  };
+const CORR_DUN_SHOP   = { x: 395, y: 220, w: 60,  h: 90  };
+const CORR_SHOP_TAV   = { x: 395, y: 470, w: 60,  h: 75  };
 
 const DOORS = [
-  { x: 240, y: 160, horiz: true  },
-  { x: 330, y: 160, horiz: true  },
-  { x: 570, y: 160, horiz: true  },
-  { x: 660, y: 160, horiz: true  },
-  { x: 420, y: 260, horiz: false },
-  { x: 420, y: 360, horiz: false },
-  { x: 420, y: 520, horiz: false },
-  { x: 420, y: 580, horiz: false },
+  { x: 245, y: 140, horiz: true  },
+  { x: 330, y: 140, horiz: true  },
+  { x: 580, y: 140, horiz: true  },
+  { x: 670, y: 140, horiz: true  },
+  { x: 425, y: 220, horiz: false },
+  { x: 425, y: 310, horiz: false },
+  { x: 425, y: 470, horiz: false },
+  { x: 425, y: 545, horiz: false },
 ];
 
 const ROOM_RECTS: Record<string, { x: number; y: number; w: number; h: number }> = {
@@ -176,8 +179,6 @@ const ROOM_RECTS: Record<string, { x: number; y: number; w: number; h: number }>
 };
 
 // ─── Waypoint Navigation System ──────────────────────────────────────────────
-// Each room has a "center" waypoint. Corridors have midpoints.
-// Heroes walk along these waypoints to travel between rooms.
 
 type RoomId = "church" | "corridor" | "boss_arena" | "shop" | "rest_area";
 
@@ -188,11 +189,11 @@ interface Waypoint {
 
 // Room center points (where heroes stand when in that room)
 const ROOM_CENTERS: Record<RoomId, Waypoint> = {
-  church:     { x: ROOM_SANCTUARY.x + ROOM_SANCTUARY.w / 2, y: ROOM_SANCTUARY.y + ROOM_SANCTUARY.h * 0.6 },
-  corridor:   { x: ROOM_DUNGEON.x + ROOM_DUNGEON.w / 2,     y: ROOM_DUNGEON.y + ROOM_DUNGEON.h * 0.6 },
-  boss_arena: { x: ROOM_BOSS.x + 140,                        y: ROOM_BOSS.y + ROOM_BOSS.h * 0.65 },
-  shop:       { x: ROOM_SHOP.x + ROOM_SHOP.w / 2,            y: ROOM_SHOP.y + ROOM_SHOP.h * 0.6 },
-  rest_area:  { x: ROOM_TAVERN.x + ROOM_TAVERN.w / 2,        y: ROOM_TAVERN.y + ROOM_TAVERN.h * 0.5 },
+  church:     { x: ROOM_SANCTUARY.x + ROOM_SANCTUARY.w / 2, y: ROOM_SANCTUARY.y + ROOM_SANCTUARY.h * 0.65 },
+  corridor:   { x: ROOM_DUNGEON.x + ROOM_DUNGEON.w / 2,     y: ROOM_DUNGEON.y + ROOM_DUNGEON.h * 0.65 },
+  boss_arena: { x: ROOM_BOSS.x + 160,                        y: ROOM_BOSS.y + ROOM_BOSS.h * 0.65 },
+  shop:       { x: ROOM_SHOP.x + ROOM_SHOP.w / 2,            y: ROOM_SHOP.y + ROOM_SHOP.h * 0.65 },
+  rest_area:  { x: ROOM_TAVERN.x + ROOM_TAVERN.w / 2,        y: ROOM_TAVERN.y + ROOM_TAVERN.h * 0.55 },
 };
 
 // Corridor midpoints
@@ -261,6 +262,7 @@ interface HeroMovement {
 
 const HERO_SPEED = 2.5; // pixels per frame
 const SPAWN_DURATION = 45; // frames for spawn/despawn animation
+const HERO_SCALE = 4; // 放大英雄到4x
 
 // ─── Torch / Light Prop ───────────────────────────────────────────────────────
 
@@ -268,13 +270,13 @@ function drawTorch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: nu
   const src = tall ? MV.torch3 : MV.torch0;
   const frameH = tall ? 48 : 16;
   const frame = Math.floor(tick / 7) % 4;
-  drawSprite(ctx, src, 16, frameH, frame, x, y, 2);
-  const glow = ctx.createRadialGradient(x, y, 0, x, y, 35 + Math.sin(tick * 0.08) * 5);
-  glow.addColorStop(0, `rgba(255,160,40,${0.15 + Math.sin(tick * 0.1) * 0.05})`);
+  drawSprite(ctx, src, 16, frameH, frame, x, y, 2.5);
+  const glow = ctx.createRadialGradient(x, y, 0, x, y, 40 + Math.sin(tick * 0.08) * 6);
+  glow.addColorStop(0, `rgba(255,160,40,${0.18 + Math.sin(tick * 0.1) * 0.06})`);
   glow.addColorStop(1, "rgba(255,100,20,0)");
   ctx.fillStyle = glow;
   ctx.beginPath();
-  ctx.arc(x, y, 40, 0, Math.PI * 2);
+  ctx.arc(x, y, 45, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -282,50 +284,58 @@ function drawTorch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: nu
 
 function drawWitch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
   const frame = Math.floor(tick / 8) % 10;
-  drawSprite(ctx, MV.witchIdle, 32, 32, frame, x, y, 2.5);
+  drawSprite(ctx, MV.witchIdle, 32, 32, frame, x, y, 3);
   // Magic glow
-  const mg = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, 30);
-  mg.addColorStop(0, `rgba(180,80,255,${0.12 + Math.sin(tick * 0.07) * 0.05})`);
+  const mg = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, 35);
+  mg.addColorStop(0, `rgba(180,80,255,${0.15 + Math.sin(tick * 0.07) * 0.06})`);
   mg.addColorStop(1, "rgba(100,40,180,0)");
   ctx.fillStyle = mg;
   ctx.beginPath();
-  ctx.arc(x, y + 10, 30, 0, Math.PI * 2);
+  ctx.arc(x, y + 10, 35, 0, Math.PI * 2);
   ctx.fill();
 }
 
 function drawGuardian(ctx: CanvasRenderingContext2D, x: number, y: number, tick: number) {
   const frame = Math.floor(tick / 6) % 12;
-  drawSprite(ctx, MV.guardianIdle, 16, 16, frame, x, y, 2.5);
+  drawSprite(ctx, MV.guardianIdle, 16, 16, frame, x, y, 3);
 }
 
 function drawBoss(ctx: CanvasRenderingContext2D, tick: number, heroesInRoom: Hero[]) {
-  const bx = ROOM_BOSS.x + ROOM_BOSS.w - 100;
+  const bx = ROOM_BOSS.x + ROOM_BOSS.w - 130;
   const by = ROOM_BOSS.y + ROOM_BOSS.h * 0.5;
   const isFighting = heroesInRoom.some(h => h.state === "fighting" || h.state === "casting");
 
   if (isFighting) {
     const frame = Math.floor(tick / 5) % 10;
-    drawSprite(ctx, MV.bossAttack, 48, 48, frame, bx, by, 3);
+    drawSprite(ctx, MV.bossAttack, 48, 48, frame, bx, by, 4);
+    // 战斗时红色光晕
+    const rg = ctx.createRadialGradient(bx, by, 0, bx, by, 80);
+    rg.addColorStop(0, `rgba(255,0,0,${0.1 + Math.sin(tick * 0.1) * 0.05})`);
+    rg.addColorStop(1, "rgba(255,0,0,0)");
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.arc(bx, by, 80, 0, Math.PI * 2);
+    ctx.fill();
   } else {
     const frame = Math.floor(tick / 10) % 6;
-    drawSprite(ctx, MV.bossIdle, 48, 48, frame, bx, by, 3);
+    drawSprite(ctx, MV.bossIdle, 48, 48, frame, bx, by, 4);
   }
 
-  // Boss name
-  ctx.fillStyle = "rgba(0,0,0,0.7)";
-  ctx.fillRect(bx - 50, by - 60, 100, 16);
+  // Boss name tag
+  ctx.fillStyle = "rgba(0,0,0,0.75)";
+  ctx.fillRect(bx - 55, by - 80, 110, 18);
   ctx.fillStyle = "#FF4444";
-  ctx.font = "bold 10px monospace";
+  ctx.font = "bold 11px monospace";
   ctx.textAlign = "center";
-  ctx.fillText("LORD WIZARD", bx, by - 48);
+  ctx.fillText("LORD WIZARD", bx, by - 66);
   ctx.textAlign = "left";
 
   // Boss HP bar
   const bossHp = isFighting ? 0.5 + Math.sin(tick * 0.03) * 0.2 : 1.0;
   ctx.fillStyle = "rgba(0,0,0,0.6)";
-  ctx.fillRect(bx - 40, by - 42, 80, 8);
+  ctx.fillRect(bx - 45, by - 60, 90, 10);
   ctx.fillStyle = bossHp > 0.5 ? "#FF4444" : "#FF8800";
-  ctx.fillRect(bx - 39, by - 41, 78 * bossHp, 6);
+  ctx.fillRect(bx - 44, by - 59, 88 * bossHp, 8);
 }
 
 // ─── Player Sprite Selection ─────────────────────────────────────────────────
@@ -353,16 +363,16 @@ function drawHero(
 
   // Spawn/despawn animation
   let alpha = 1;
-  let scale = 3;
+  let scale = HERO_SCALE;
   if (movement.spawnPhase === "spawning") {
     const t = movement.spawnTimer / SPAWN_DURATION;
     alpha = t;
-    scale = 2 + t;
+    scale = (HERO_SCALE - 1) + t;
     // Spawn portal effect
-    const portalR = 30 * (1 - t);
+    const portalR = 35 * (1 - t);
     const pg = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, portalR);
-    pg.addColorStop(0, `rgba(255,220,80,${0.6 * (1 - t)})`);
-    pg.addColorStop(0.5, `rgba(200,100,255,${0.4 * (1 - t)})`);
+    pg.addColorStop(0, `rgba(255,220,80,${0.7 * (1 - t)})`);
+    pg.addColorStop(0.5, `rgba(200,100,255,${0.5 * (1 - t)})`);
     pg.addColorStop(1, "rgba(100,50,200,0)");
     ctx.fillStyle = pg;
     ctx.beginPath();
@@ -371,12 +381,12 @@ function drawHero(
   } else if (movement.spawnPhase === "despawning") {
     const t = movement.spawnTimer / SPAWN_DURATION;
     alpha = 1 - t;
-    scale = 3 - t;
+    scale = HERO_SCALE - t;
     // Despawn portal effect
-    const portalR = 30 * t;
+    const portalR = 35 * t;
     const pg = ctx.createRadialGradient(x, y + 10, 0, x, y + 10, portalR);
-    pg.addColorStop(0, `rgba(255,220,80,${0.6 * t})`);
-    pg.addColorStop(0.5, `rgba(200,100,255,${0.4 * t})`);
+    pg.addColorStop(0, `rgba(255,220,80,${0.7 * t})`);
+    pg.addColorStop(0.5, `rgba(200,100,255,${0.5 * t})`);
     pg.addColorStop(1, "rgba(100,50,200,0)");
     ctx.fillStyle = pg;
     ctx.beginPath();
@@ -389,24 +399,32 @@ function drawHero(
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  // Selection ring
+  // Selection ring (更大更明显)
   if (selected) {
     ctx.strokeStyle = "#FFD700";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([5, 3]);
     ctx.beginPath();
-    ctx.arc(x, y + 4, 26, 0, Math.PI * 2);
+    ctx.arc(x, y + 4, 32, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
+    // 金色光晕
+    const sg = ctx.createRadialGradient(x, y + 4, 20, x, y + 4, 40);
+    sg.addColorStop(0, "rgba(255,215,0,0.15)");
+    sg.addColorStop(1, "rgba(255,215,0,0)");
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(x, y + 4, 40, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
   ctx.beginPath();
-  ctx.ellipse(x, y + 26, 14, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + 30, 18, 6, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Draw player sprite
+  // Draw player sprite (4x scale)
   const { src, frameW, frameCount, fps } = getPlayerSprite(state, movement.isMoving, movement.facingLeft);
   const frame = Math.floor(tick / (60 / fps)) % frameCount;
   const img = loadImg(src);
@@ -419,52 +437,75 @@ function drawHero(
   // State effects
   if (!movement.isMoving) {
     if (state === "fighting") {
-      for (let i = 0; i < 4; i++) {
-        const angle = tick * 0.09 + (i * Math.PI * 2) / 4;
-        const sx2 = x + Math.cos(angle) * 22;
-        const sy2 = y + Math.sin(angle) * 14;
+      for (let i = 0; i < 5; i++) {
+        const angle = tick * 0.09 + (i * Math.PI * 2) / 5;
+        const sx2 = x + Math.cos(angle) * 28;
+        const sy2 = y + Math.sin(angle) * 16;
         ctx.fillStyle = "#FF4444";
         ctx.globalAlpha = alpha * (0.6 + Math.sin(tick * 0.2 + i) * 0.3);
         ctx.beginPath();
-        ctx.arc(sx2, sy2, 2.5, 0, Math.PI * 2);
+        ctx.arc(sx2, sy2, 3, 0, Math.PI * 2);
         ctx.fill();
       }
     }
     if (state === "casting" || state === "shopping") {
-      for (let i = 0; i < 5; i++) {
-        const angle = tick * 0.07 + (i * Math.PI * 2) / 5;
-        const sx2 = x + Math.cos(angle) * 20;
-        const sy2 = y + Math.sin(angle) * 12;
+      for (let i = 0; i < 6; i++) {
+        const angle = tick * 0.07 + (i * Math.PI * 2) / 6;
+        const sx2 = x + Math.cos(angle) * 26;
+        const sy2 = y + Math.sin(angle) * 15;
         ctx.fillStyle = state === "casting" ? "#AA44FF" : "#FFAA44";
         ctx.globalAlpha = alpha * (0.7 + Math.sin(tick * 0.15 + i) * 0.25);
         ctx.beginPath();
-        ctx.arc(sx2, sy2, 2, 0, Math.PI * 2);
+        ctx.arc(sx2, sy2, 2.5, 0, Math.PI * 2);
         ctx.fill();
       }
     }
     if (state === "resting") {
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#88CCFF";
-      ctx.font = "bold 10px monospace";
-      ctx.fillText("z", x + 12, y - 16 + Math.sin(tick * 0.05) * 3);
-      ctx.fillText("Z", x + 18, y - 23 + Math.sin(tick * 0.05 + 1) * 3);
+      ctx.font = "bold 12px monospace";
+      ctx.fillText("z", x + 16, y - 18 + Math.sin(tick * 0.05) * 4);
+      ctx.fillText("Z", x + 22, y - 26 + Math.sin(tick * 0.05 + 1) * 4);
     }
   }
 
   ctx.globalAlpha = alpha;
 
-  // Name tag
+  // Name tag (更大更清晰)
   const classConfig = HERO_CLASSES[hero.heroClass as keyof typeof HERO_CLASSES];
   const nameColor = classConfig?.color || "#FFFFFF";
-  const label = hero.name.substring(0, 10);
-  ctx.fillStyle = "rgba(0,0,0,0.8)";
-  const labelW = label.length * 6 + 10;
-  ctx.fillRect(x - labelW / 2, y - 42, labelW, 14);
+  const label = hero.name.substring(0, 12);
+  const charW = 7;
+  const labelW = label.length * charW + 14;
+  const labelH = 16;
+  const labelX = x - labelW / 2;
+  const labelY = y - 52;
+
+  // 名字背景
+  ctx.fillStyle = "rgba(0,0,0,0.85)";
+  ctx.beginPath();
+  ctx.roundRect(labelX, labelY, labelW, labelH, 3);
+  ctx.fill();
+
+  // 名字边框（类别颜色）
+  ctx.strokeStyle = nameColor + "88";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(labelX, labelY, labelW, labelH, 3);
+  ctx.stroke();
+
+  // 名字文字
   ctx.fillStyle = nameColor;
-  ctx.font = "bold 8px monospace";
+  ctx.font = "bold 9px monospace";
   ctx.textAlign = "center";
-  ctx.fillText(label, x, y - 31);
+  ctx.fillText(label, x, labelY + 11);
   ctx.textAlign = "left";
+
+  // 类别 emoji（小图标）
+  if (classConfig?.emoji) {
+    ctx.font = "9px monospace";
+    ctx.fillText(classConfig.emoji, labelX - 12, labelY + 11);
+  }
 
   ctx.restore();
 }
@@ -474,7 +515,7 @@ function drawHero(
 function drawCorridors(ctx: CanvasRenderingContext2D, tick: number) {
   const corridors = [CORR_SAN_DUN, CORR_DUN_BOSS, CORR_DUN_SHOP, CORR_SHOP_TAV];
   for (const c of corridors) {
-    drawTiledBg(ctx, MV.bgDungeon, c.x, c.y, c.w, c.h, 0.7);
+    drawTiledBg(ctx, MV.bgDungeon, c.x, c.y, c.w, c.h, 0.75);
     ctx.strokeStyle = "#333355";
     ctx.lineWidth = 1;
     ctx.strokeRect(c.x, c.y, c.w, c.h);
@@ -484,20 +525,48 @@ function drawCorridors(ctx: CanvasRenderingContext2D, tick: number) {
     const img = loadImg(MV.doorScene);
     if (img.complete && img.naturalWidth > 0) {
       if (d.horiz) {
-        ctx.drawImage(img, 0, 0, 64, 32, d.x - 16, d.y - 16, 32, 32);
+        ctx.drawImage(img, 0, 0, 64, 32, d.x - 18, d.y - 18, 36, 36);
       } else {
         ctx.save();
         ctx.translate(d.x, d.y);
         ctx.rotate(Math.PI / 2);
-        ctx.drawImage(img, 0, 0, 64, 32, -16, -16, 32, 32);
+        ctx.drawImage(img, 0, 0, 64, 32, -18, -18, 36, 36);
         ctx.restore();
       }
     }
   }
 
   // Torches in corridors
-  drawTorch(ctx, CORR_SAN_DUN.x + CORR_SAN_DUN.w / 2, CORR_SAN_DUN.y + 40, tick);
-  drawTorch(ctx, CORR_DUN_BOSS.x + CORR_DUN_BOSS.w / 2, CORR_DUN_BOSS.y + 40, tick);
+  drawTorch(ctx, CORR_SAN_DUN.x + CORR_SAN_DUN.w / 2, CORR_SAN_DUN.y + 45, tick);
+  drawTorch(ctx, CORR_DUN_BOSS.x + CORR_DUN_BOSS.w / 2, CORR_DUN_BOSS.y + 45, tick);
+}
+
+// ─── Room Label Helper ────────────────────────────────────────────────────────
+
+function drawRoomLabel(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  color: string,
+  rx: number, ry: number,
+  cnt: number,
+  cntColor: string
+) {
+  const labelW = text.length * 7.5 + 12;
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(rx + 5, ry + 5, labelW, 16);
+  ctx.fillStyle = color;
+  ctx.font = "bold 10px monospace";
+  ctx.fillText(text, rx + 9, ry + 17);
+
+  if (cnt > 0) {
+    ctx.fillStyle = "rgba(0,0,0,0.65)";
+    ctx.fillRect(rx + labelW + 8, ry + 5, 26, 16);
+    ctx.fillStyle = cntColor;
+    ctx.font = "bold 9px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`${cnt}×`, rx + labelW + 21, ry + 17);
+    ctx.textAlign = "left";
+  }
 }
 
 // ─── Draw Rooms ──────────────────────────────────────────────────────────────
@@ -513,41 +582,26 @@ function drawRooms(ctx: CanvasRenderingContext2D, heroList: Hero[], tick: number
     ctx.fillStyle = "rgba(70,20,130,0.12)";
     ctx.fillRect(r.x, r.y, r.w, r.h);
 
-    // Room label
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.fillRect(r.x + 4, r.y + 4, 140, 14);
-    ctx.fillStyle = "#AA88FF";
-    ctx.font = "bold 9px monospace";
-    ctx.fillText("⛪ HOLY SANCTUARY", r.x + 8, r.y + 15);
+    const cnt = heroList.filter(h => h.room === "church").length;
+    drawRoomLabel(ctx, "⛪ HOLY SANCTUARY", "#AA88FF", r.x, r.y, cnt, "#FFFFFF");
 
     // Save point / spawn portal
-    drawStaticImg(ctx, MV.benchStatic, r.x + r.w / 2 - 24, r.y + r.h / 2 + 10, 48, 48);
-    // Portal glow (always active - this is the spawn point)
-    const pg = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h / 2 + 34, 0, r.x + r.w / 2, r.y + r.h / 2 + 34, 50);
-    pg.addColorStop(0, `rgba(255,220,80,${0.25 + Math.sin(tick * 0.06) * 0.1})`);
-    pg.addColorStop(0.6, `rgba(180,100,255,${0.12 + Math.sin(tick * 0.04) * 0.05})`);
+    drawStaticImg(ctx, MV.benchStatic, r.x + r.w / 2 - 28, r.y + r.h / 2 + 10, 56, 56);
+    // Portal glow
+    const pg = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h / 2 + 38, 0, r.x + r.w / 2, r.y + r.h / 2 + 38, 60);
+    pg.addColorStop(0, `rgba(255,220,80,${0.28 + Math.sin(tick * 0.06) * 0.1})`);
+    pg.addColorStop(0.6, `rgba(180,100,255,${0.14 + Math.sin(tick * 0.04) * 0.06})`);
     pg.addColorStop(1, "rgba(100,50,200,0)");
     ctx.fillStyle = pg;
     ctx.beginPath();
-    ctx.arc(r.x + r.w / 2, r.y + r.h / 2 + 34, 50, 0, Math.PI * 2);
+    ctx.arc(r.x + r.w / 2, r.y + r.h / 2 + 38, 60, 0, Math.PI * 2);
     ctx.fill();
 
     // Tapestries
-    drawStaticImg(ctx, MV.tapestry, r.x + 8, r.y + 30, 16, 48);
-    drawStaticImg(ctx, MV.tapestry, r.x + r.w - 24, r.y + 30, 16, 48);
-    drawTorch(ctx, r.x + r.w / 2 - 40, r.y + r.h - 30, tick);
-    drawTorch(ctx, r.x + r.w / 2 + 40, r.y + r.h - 30, tick);
-
-    const cnt = heroList.filter(h => h.room === "church").length;
-    if (cnt > 0) {
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(r.x + r.w - 28, r.y + 4, 24, 14);
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(`${cnt}×`, r.x + r.w - 6, r.y + 15);
-      ctx.textAlign = "left";
-    }
+    drawStaticImg(ctx, MV.tapestry, r.x + 8, r.y + 35, 18, 56);
+    drawStaticImg(ctx, MV.tapestry, r.x + r.w - 26, r.y + 35, 18, 56);
+    drawTorch(ctx, r.x + r.w / 2 - 50, r.y + r.h - 35, tick);
+    drawTorch(ctx, r.x + r.w / 2 + 50, r.y + r.h - 35, tick);
   }
 
   // ── DUNGEON MAIN ──
@@ -560,30 +614,16 @@ function drawRooms(ctx: CanvasRenderingContext2D, heroList: Hero[], tick: number
     ctx.fillStyle = "rgba(20,30,60,0.15)";
     ctx.fillRect(r.x, r.y, r.w, r.h);
 
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.fillRect(r.x + 4, r.y + 4, 120, 14);
-    ctx.fillStyle = "#88AAFF";
-    ctx.font = "bold 9px monospace";
-    ctx.fillText("📜 DUNGEON MAIN", r.x + 8, r.y + 15);
-
-    drawStaticImg(ctx, MV.chain, r.x + 40, r.y, 16, 32);
-    drawStaticImg(ctx, MV.chain, r.x + r.w - 56, r.y, 16, 32);
-    const guardX = r.x + 60 + Math.floor(Math.sin(tick * 0.02) * 30);
-    drawGuardian(ctx, guardX, r.y + r.h - 30, tick);
-    drawTorch(ctx, r.x + 16, r.y + 50, tick, true);
-    drawTorch(ctx, r.x + r.w - 16, r.y + 50, tick, true);
-    drawStaticImg(ctx, MV.skulls, r.x + r.w / 2 - 8, r.y + r.h - 20, 16, 16);
-
     const cnt = heroList.filter(h => h.room === "corridor").length;
-    if (cnt > 0) {
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(r.x + r.w - 28, r.y + 4, 24, 14);
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(`${cnt}×`, r.x + r.w - 6, r.y + 15);
-      ctx.textAlign = "left";
-    }
+    drawRoomLabel(ctx, "📜 DUNGEON MAIN", "#88AAFF", r.x, r.y, cnt, "#FFFFFF");
+
+    drawStaticImg(ctx, MV.chain, r.x + 45, r.y, 16, 36);
+    drawStaticImg(ctx, MV.chain, r.x + r.w - 61, r.y, 16, 36);
+    const guardX = r.x + 70 + Math.floor(Math.sin(tick * 0.02) * 35);
+    drawGuardian(ctx, guardX, r.y + r.h - 35, tick);
+    drawTorch(ctx, r.x + 18, r.y + 55, tick, true);
+    drawTorch(ctx, r.x + r.w - 18, r.y + 55, tick, true);
+    drawStaticImg(ctx, MV.skulls, r.x + r.w / 2 - 8, r.y + r.h - 22, 16, 16);
   }
 
   // ── BOSS ARENA ──
@@ -600,32 +640,22 @@ function drawRooms(ctx: CanvasRenderingContext2D, heroList: Hero[], tick: number
       ctx.fillRect(r.x, r.y, r.w, r.h);
     }
 
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.fillRect(r.x + 4, r.y + 4, 100, 14);
-    ctx.fillStyle = "#FF4444";
-    ctx.font = "bold 9px monospace";
-    ctx.fillText("⚔ BOSS ARENA", r.x + 8, r.y + 15);
+    const cnt = heroList.filter(h => h.room === "boss_arena").length;
+    drawRoomLabel(ctx, "⚔ BOSS ARENA", "#FF4444", r.x, r.y, cnt, "#FF4444");
 
-    drawTorch(ctx, r.x + 20, r.y + 60, tick, true);
-    drawTorch(ctx, r.x + r.w - 20, r.y + 60, tick, true);
-    drawTorch(ctx, r.x + 20, r.y + r.h - 40, tick, true);
-    drawTorch(ctx, r.x + r.w - 20, r.y + r.h - 40, tick, true);
-    drawStaticImg(ctx, MV.painting, r.x + 60, r.y + 10, 32, 32);
-    drawStaticImg(ctx, MV.painting, r.x + r.w - 92, r.y + 10, 32, 32);
+    // 更多装饰（更大的房间）
+    drawTorch(ctx, r.x + 22, r.y + 65, tick, true);
+    drawTorch(ctx, r.x + r.w - 22, r.y + 65, tick, true);
+    drawTorch(ctx, r.x + 22, r.y + r.h - 45, tick, true);
+    drawTorch(ctx, r.x + r.w - 22, r.y + r.h - 45, tick, true);
+    drawTorch(ctx, r.x + r.w / 2, r.y + 65, tick, true);
+    drawStaticImg(ctx, MV.painting, r.x + 70, r.y + 12, 36, 36);
+    drawStaticImg(ctx, MV.painting, r.x + r.w - 106, r.y + 12, 36, 36);
+    drawStaticImg(ctx, MV.tapestry, r.x + 8, r.y + 40, 20, 64);
+    drawStaticImg(ctx, MV.tapestry, r.x + r.w - 28, r.y + 40, 20, 64);
 
     const bossHeroes = heroList.filter(h => h.room === "boss_arena");
     drawBoss(ctx, tick, bossHeroes);
-
-    const cnt = bossHeroes.length;
-    if (cnt > 0) {
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(r.x + r.w - 28, r.y + 4, 24, 14);
-      ctx.fillStyle = "#FF4444";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(`${cnt}×`, r.x + r.w - 6, r.y + 15);
-      ctx.textAlign = "left";
-    }
   }
 
   // ── MERCHANT SHOP ──
@@ -638,27 +668,13 @@ function drawRooms(ctx: CanvasRenderingContext2D, heroList: Hero[], tick: number
     ctx.fillStyle = "rgba(80,50,10,0.1)";
     ctx.fillRect(r.x, r.y, r.w, r.h);
 
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.fillRect(r.x + 4, r.y + 4, 130, 14);
-    ctx.fillStyle = "#FFAA44";
-    ctx.font = "bold 9px monospace";
-    ctx.fillText("🏪 MERCHANT SHOP", r.x + 8, r.y + 15);
-
-    drawWitch(ctx, r.x + r.w / 2, r.y + r.h / 2 + 10, tick);
-    drawStaticImg(ctx, MV.table, r.x + 20, r.y + r.h - 40, 40, 32);
-    drawTorch(ctx, r.x + r.w / 2 - 50, r.y + r.h - 20, tick);
-    drawTorch(ctx, r.x + r.w / 2 + 50, r.y + r.h - 20, tick);
-
     const cnt = heroList.filter(h => h.room === "shop").length;
-    if (cnt > 0) {
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(r.x + r.w - 28, r.y + 4, 24, 14);
-      ctx.fillStyle = "#FFAA44";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(`${cnt}×`, r.x + r.w - 6, r.y + 15);
-      ctx.textAlign = "left";
-    }
+    drawRoomLabel(ctx, "🏪 MERCHANT SHOP", "#FFAA44", r.x, r.y, cnt, "#FFAA44");
+
+    drawWitch(ctx, r.x + r.w / 2, r.y + r.h / 2 + 15, tick);
+    drawStaticImg(ctx, MV.table, r.x + 22, r.y + r.h - 45, 44, 36);
+    drawTorch(ctx, r.x + r.w / 2 - 60, r.y + r.h - 25, tick);
+    drawTorch(ctx, r.x + r.w / 2 + 60, r.y + r.h - 25, tick);
   }
 
   // ── TAVERN REST ──
@@ -671,36 +687,21 @@ function drawRooms(ctx: CanvasRenderingContext2D, heroList: Hero[], tick: number
     ctx.fillStyle = "rgba(20,50,20,0.2)";
     ctx.fillRect(r.x, r.y, r.w, r.h);
 
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.fillRect(r.x + 4, r.y + 4, 100, 14);
-    ctx.fillStyle = "#44AA44";
-    ctx.font = "bold 9px monospace";
-    ctx.fillText("🍺 TAVERN REST", r.x + 8, r.y + 15);
-
-    drawStaticImg(ctx, MV.table, r.x + r.w / 2 - 20, r.y + 20, 40, 32);
-    drawTorch(ctx, r.x + 20, r.y + 30, tick);
-    drawTorch(ctx, r.x + r.w - 20, r.y + 30, tick);
-
     const resting = heroList.filter(h => h.room === "rest_area");
+    drawRoomLabel(ctx, "🍺 TAVERN REST", "#44AA44", r.x, r.y, resting.length, "#44AA44");
+
+    drawStaticImg(ctx, MV.table, r.x + r.w / 2 - 22, r.y + 22, 44, 36);
+    drawTorch(ctx, r.x + 22, r.y + 35, tick);
+    drawTorch(ctx, r.x + r.w - 22, r.y + 35, tick);
+
     if (resting.length > 0) {
-      const hg = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h / 2, 0, r.x + r.w / 2, r.y + r.h / 2, 50);
-      hg.addColorStop(0, `rgba(80,200,80,${0.2 + Math.sin(tick * 0.06) * 0.08})`);
+      const hg = ctx.createRadialGradient(r.x + r.w / 2, r.y + r.h / 2, 0, r.x + r.w / 2, r.y + r.h / 2, 60);
+      hg.addColorStop(0, `rgba(80,200,80,${0.22 + Math.sin(tick * 0.06) * 0.08})`);
       hg.addColorStop(1, "rgba(40,120,40,0)");
       ctx.fillStyle = hg;
       ctx.beginPath();
-      ctx.arc(r.x + r.w / 2, r.y + r.h / 2, 50, 0, Math.PI * 2);
+      ctx.arc(r.x + r.w / 2, r.y + r.h / 2, 60, 0, Math.PI * 2);
       ctx.fill();
-    }
-
-    const cnt = resting.length;
-    if (cnt > 0) {
-      ctx.fillStyle = "rgba(0,0,0,0.6)";
-      ctx.fillRect(r.x + r.w - 28, r.y + 4, 24, 14);
-      ctx.fillStyle = "#44AA44";
-      ctx.font = "bold 8px monospace";
-      ctx.textAlign = "right";
-      ctx.fillText(`${cnt}×`, r.x + r.w - 6, r.y + 15);
-      ctx.textAlign = "left";
     }
   }
 }
@@ -823,7 +824,7 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
             const total = heroesInRoom.length;
             if (total > 1 && idx >= 0) {
               const rect = ROOM_RECTS[mv.targetRoom] || ROOM_RECTS["corridor"];
-              const margin = 40;
+              const margin = 45;
               const usableW = rect.w - margin * 2;
               const cols = Math.min(total, 4);
               const col = idx % cols;
@@ -909,7 +910,7 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
     }
 
     // Subtle scanline overlay
-    ctx.fillStyle = "rgba(0,0,0,0.015)";
+    ctx.fillStyle = "rgba(0,0,0,0.012)";
     for (let scanY = 0; scanY < CANVAS_H; scanY += 4) {
       ctx.fillRect(0, scanY, CANVAS_W, 2);
     }
@@ -938,7 +939,7 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
         if (!mv) continue;
         const dx = mv.currentX - mx;
         const dy = mv.currentY - my;
-        if (Math.sqrt(dx * dx + dy * dy) < 28) {
+        if (Math.sqrt(dx * dx + dy * dy) < 32) {
           onHeroClick(hero.id);
           return;
         }
