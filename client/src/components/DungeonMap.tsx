@@ -104,19 +104,19 @@ function buildWalkableGrid(): boolean[][] {
     }
   }
 
-  // Add corridor connections between rooms (2-tile wide passages)
-  // spawn ↔ dungeon: rows 8-11, cols 17-22
+  // Add corridor connections between rooms (4-tile wide passages aligned with arch positions)
+  // spawn ↔ dungeon: HORIZONTAL corridor at cols 17-22, rows 8-11 (arch center ~row 9-10)
   for (let r = 8; r <= 11; r++) for (let c = 17; c <= 22; c++) grid[r][c] = true;
-  // dungeon ↔ boss: rows 8-11, cols 37-42
+  // dungeon ↔ boss: HORIZONTAL corridor at cols 37-42, rows 8-11
   for (let r = 8; r <= 11; r++) for (let c = 37; c <= 42; c++) grid[r][c] = true;
-  // spawn ↔ shop: cols 8-11, rows 17-22
-  for (let c = 8; c <= 11; c++) for (let r = 17; r <= 22; r++) grid[r][c] = true;
-  // dungeon ↔ rest: cols 28-31, rows 17-22
-  for (let c = 28; c <= 31; c++) for (let r = 17; r <= 22; r++) grid[r][c] = true;
-  // shop ↔ rest: rows 26-29, cols 17-22
-  for (let r = 26; r <= 29; r++) for (let c = 17; c <= 22; c++) grid[r][c] = true;
-  // boss ↔ rest/shop: rows 18-21, cols 37-42 (boss side entrance)
-  for (let r = 18; r <= 21; r++) for (let c = 37; c <= 42; c++) grid[r][c] = true;
+  // spawn ↔ shop: VERTICAL corridor at rows 17-22, cols 7-12 (arch center ~col 9-10)
+  for (let c = 7; c <= 12; c++) for (let r = 17; r <= 22; r++) grid[r][c] = true;
+  // dungeon ↔ rest: VERTICAL corridor at rows 17-22, cols 27-32 (arch center ~col 29-30)
+  for (let c = 27; c <= 32; c++) for (let r = 17; r <= 22; r++) grid[r][c] = true;
+  // shop ↔ rest: HORIZONTAL corridor at cols 17-22, rows 27-32 (arch center ~row 29-30)
+  for (let r = 27; r <= 32; r++) for (let c = 17; c <= 22; c++) grid[r][c] = true;
+  // boss ↔ rest: VERTICAL corridor at rows 17-22, cols 37-42
+  for (let r = 17; r <= 22; r++) for (let c = 37; c <= 42; c++) grid[r][c] = true;
 
   return grid;
 }
@@ -1076,6 +1076,29 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
         hp: 100, maxHp: 100, mp: 100, maxMp: 100,
       };
       drawHero(ctx, heroObj, mv, tick, id === selectedHeroId);
+    }
+
+    // Debug: show walkable grid (toggle with URL ?debug=1)
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1') {
+      for (let row = 0; row < MAP_ROWS; row++) {
+        for (let col = 0; col < MAP_COLS; col++) {
+          if (WALKABLE[row][col]) {
+            ctx.fillStyle = 'rgba(0,255,0,0.25)';
+          } else {
+            ctx.fillStyle = 'rgba(255,0,0,0.12)';
+          }
+          ctx.fillRect(col * TS, row * TS, TS, TS);
+        }
+      }
+      // Draw grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 0.5;
+      for (let col = 0; col <= MAP_COLS; col++) {
+        ctx.beginPath(); ctx.moveTo(col * TS, 0); ctx.lineTo(col * TS, MAP_ROWS * TS); ctx.stroke();
+      }
+      for (let row = 0; row <= MAP_ROWS; row++) {
+        ctx.beginPath(); ctx.moveTo(0, row * TS); ctx.lineTo(MAP_COLS * TS, row * TS); ctx.stroke();
+      }
     }
 
     // Subtle scanline overlay
