@@ -181,7 +181,7 @@ function bfsPath(
 
 // ─── Sprite paths ─────────────────────────────────────────────────────────────
 
-const CASTLE_BG_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663321243150/kUk4sJXkGLHTnK5J3QqqXR/dungeon_bg_v3_filled_30ca2d41.png";
+const CASTLE_BG_URL = "/sprites/mv/tilesets/dungeon_bg_new.png";
 
 const MV = {
   bgDungeon:   "/sprites/mv/tilesets/bg_00_dungeon.png",
@@ -382,11 +382,11 @@ function drawGuardian(ctx: CanvasRenderingContext2D, x: number, y: number, tick:
 }
 
 // ─── NPC/Boss screen positions (pixel coords, used for hero facing direction) ──
-// Boss is at the ACTUAL pentagram center in the background image
-// Measured by pixel analysis: canvas px=(2813, 985) = tile(col=58.6, row=20.5)
-// Background image (2752x1536) is scaled to canvas (3360x1920), scale=(1.221, 1.25)
-const BOSS_SCREEN_X = 2813;
-const BOSS_SCREEN_Y = 985;
+// Boss is at the center of the boss room pentagram in the new background
+// Boss room: c0=40, c1=69, r0=0, r1=39 → center col=54.5, row=19.5
+// Screen coords: col*TS = 54.5*48 = 2616, row*TS = 19.5*48 = 936
+const BOSS_SCREEN_X = 2616;
+const BOSS_SCREEN_Y = 936;
 // Guardian is at center of dungeon room
 const GUARDIAN_SCREEN_X = ((ROOMS.dungeon.c0 + ROOMS.dungeon.c1 + 1) / 2) * TS;
 const GUARDIAN_SCREEN_Y = ((ROOMS.dungeon.r0 + ROOMS.dungeon.r1 + 1) / 2) * TS;
@@ -483,19 +483,19 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const cnt = heroes.filter(h => h.room === "church").length;
     drawRoomLabel(ctx, "⛪ HOLY SANCTUARY", "#AA88FF", px, py, cnt, "#FFFFFF");
 
-    // Spawn portal glow - at exact center of spawn room
-    const bx = px + pw * 0.5, by = py + ph * 0.5;
-    const pg = ctx.createRadialGradient(bx, by, 0, bx, by, 70);
-    pg.addColorStop(0, `rgba(120,80,255,${0.25 + Math.sin(tick * 0.06) * 0.1})`);
-    pg.addColorStop(0.5, `rgba(80,40,200,${0.12 + Math.sin(tick * 0.04) * 0.06})`);
-    pg.addColorStop(1, "rgba(40,20,100,0)");
+    // Spawn portal glow - aligned with new background portal (slightly above center)
+    const bx = px + pw * 0.5, by = py + ph * 0.42;
+    const pg = ctx.createRadialGradient(bx, by, 0, bx, by, 90);
+    pg.addColorStop(0, `rgba(80,180,255,${0.35 + Math.sin(tick * 0.06) * 0.12})`);
+    pg.addColorStop(0.4, `rgba(40,120,220,${0.18 + Math.sin(tick * 0.04) * 0.08})`);
+    pg.addColorStop(1, "rgba(20,60,140,0)");
     ctx.fillStyle = pg;
     ctx.beginPath();
-    ctx.arc(bx, by, 70, 0, Math.PI * 2);
+    ctx.arc(bx, by, 90, 0, Math.PI * 2);
     ctx.fill();
-    // Animated torches
-    drawTorch(ctx, px + pw * 0.2, py + ph * 0.75, tick);
-    drawTorch(ctx, px + pw * 0.8, py + ph * 0.75, tick);
+    // Animated torches - match new background torch positions
+    drawTorch(ctx, px + pw * 0.15, py + ph * 0.55, tick);
+    drawTorch(ctx, px + pw * 0.85, py + ph * 0.55, tick);
   }
 
   // DUNGEON MAIN – guardian + torches
@@ -529,10 +529,20 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const cnt = heroes.filter(h => h.room === "boss_arena").length;
     drawRoomLabel(ctx, "⚔ BOSS ARENA", "#FF4444", px, py, cnt, "#FF4444");
 
-    drawTorch(ctx, px + pw * 0.08, py + ph * 0.18, tick, true);
-    drawTorch(ctx, px + pw * 0.92, py + ph * 0.18, tick, true);
-    drawTorch(ctx, px + pw * 0.08, py + ph * 0.82, tick, true);
-    drawTorch(ctx, px + pw * 0.92, py + ph * 0.82, tick, true);
+    // Pentagram glow overlay on new background
+    const pgx = BOSS_SCREEN_X, pgy = BOSS_SCREEN_Y;
+    const pentG = ctx.createRadialGradient(pgx, pgy, 0, pgx, pgy, 180);
+    pentG.addColorStop(0, `rgba(255,40,180,${0.08 + Math.sin(tick * 0.07) * 0.04})`);
+    pentG.addColorStop(1, "rgba(180,0,120,0)");
+    ctx.fillStyle = pentG;
+    ctx.beginPath();
+    ctx.arc(pgx, pgy, 180, 0, Math.PI * 2);
+    ctx.fill();
+    // Torches at corners of boss room
+    drawTorch(ctx, px + pw * 0.05, py + ph * 0.08, tick, true);
+    drawTorch(ctx, px + pw * 0.95, py + ph * 0.08, tick, true);
+    drawTorch(ctx, px + pw * 0.05, py + ph * 0.92, tick, true);
+    drawTorch(ctx, px + pw * 0.95, py + ph * 0.92, tick, true);
 
     const bossHeroes = heroes.filter(h => h.room === "boss_arena");
     drawBoss(ctx, tick, bossHeroes);
