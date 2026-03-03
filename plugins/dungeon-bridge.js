@@ -111,18 +111,18 @@ export const DungeonBridgePlugin = async ({ project }) => {
         break;
 
       case "session.status":
-        if (raw.status) {
+        if (raw.properties?.status) {
           events.push({
             ...base,
             eventId: nextId(),
             eventType: "agent.state.changed",
-            agentState: raw.status === "running" ? "executing" : raw.status,
+            agentState: raw.properties.status === "running" ? "executing" : raw.properties.status,
           });
         }
         break;
 
       case "tool.execute.before": {
-        const toolName = raw.tool?.id || raw.toolId || "unknown";
+        const toolName = raw.properties?.tool?.id || raw.properties?.toolId || "unknown";
         events.push({
           ...base,
           eventId: nextId(),
@@ -134,7 +134,7 @@ export const DungeonBridgePlugin = async ({ project }) => {
       }
 
       case "tool.execute.after": {
-        const toolName = raw.tool?.id || raw.toolId || "unknown";
+        const toolName = raw.properties?.tool?.id || raw.properties?.toolId || "unknown";
         events.push({
           ...base,
           eventId: nextId(),
@@ -154,7 +154,7 @@ export const DungeonBridgePlugin = async ({ project }) => {
 
       case "message.part.updated":
         // Reasoning / thinking update → planning state
-        if (raw.part?.type === "reasoning" || raw.part?.type === "thinking") {
+        if (raw.properties?.part?.type === "reasoning" || raw.properties?.part?.type === "thinking") {
           events.push({
             ...base,
             eventId: nextId(),
@@ -198,7 +198,7 @@ export const DungeonBridgePlugin = async ({ project }) => {
      */
     event: async ({ event }) => {
       try {
-        const sessionId = event.sessionID || event.sessionId || event.runId;
+        const sessionId = event.properties?.sessionID || event.properties?.sessionId || event.properties?.runId;
         if (!sessionId) return;
 
         const orchestra = mapEvent(sessionId, event);
