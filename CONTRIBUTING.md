@@ -1,12 +1,12 @@
-# Contributing to Claude Dungeon
+# Contributing to Oh My OpenCode Dungeon
 
 Thank you for your interest in contributing! Here's how to get started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/thousandsky2024/claude-pixel-agent-web
-cd claude-pixel-agent-web
+git clone https://github.com/khanhworktime/oh-my-opencode-dungeon
+cd oh-my-opencode-dungeon
 pnpm install
 cp .env.example .env   # set JWT_SECRET (DATABASE_URL is optional)
 pnpm db:push

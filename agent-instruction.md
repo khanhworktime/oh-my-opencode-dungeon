@@ -1,6 +1,6 @@
-# Claude Dungeon — Agent Integration Guide
+# Oh My OpenCode Dungeon — Agent Integration Guide
 
-How to connect your **Oh My OpenCode** agents to Claude Dungeon so they appear as pixel-art heroes in real time.
+How to connect your **Oh My OpenCode** agents to Oh My OpenCode Dungeon so they appear as pixel-art heroes in real time.
 
 ---
 
@@ -25,8 +25,8 @@ How to connect your **Oh My OpenCode** agents to Claude Dungeon so they appear a
 
 ```bash
 # 1. Clone and start
-git clone https://github.com/thousandsky2024/claude-pixel-agent-web
-cd claude-pixel-agent-web
+git clone https://github.com/khanhworktime/oh-my-opencode-dungeon
+cd oh-my-opencode-dungeon
 cp .env.example .env          # edit JWT_SECRET at minimum
 docker compose up -d
 

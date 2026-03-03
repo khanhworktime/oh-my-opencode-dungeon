@@ -1,6 +1,8 @@
-# 🏰 Claude Dungeon (Oh My OpenCode Orchestra Mode)
+# 🏰 Oh My OpenCode Dungeon
 
 <img width="1200" height="675" alt="image" src="https://github.com/user-attachments/assets/8012ae32-a35f-4e1e-8236-bbba2e135f37" />
+
+> **This is a community fork** inspired by the original [claude-pixel-agent-web](https://github.com/thousandsky2024/claude-pixel-agent-web) project by [@thousandsky2024](https://github.com/thousandsky2024) and their team. Huge thanks to them for the original vision — we built on top of their work to add Oh My OpenCode Orchestra integration, Docker support, and additional bug fixes. ❤️
 
 **Watch your Oh My OpenCode agents come alive as pixel-art heroes in a real-time dungeon.**
 
@@ -30,8 +32,8 @@ Claude Dungeon (now supporting Orchestra mode) ingests real-time events from mul
 ### Installation
 
 ```bash
-git clone https://github.com/thousandsky2024/claude-pixel-agent-web
-cd claude-pixel-agent-web
+git clone https://github.com/khanhworktime/oh-my-opencode-dungeon
+cd oh-my-opencode-dungeon
 pnpm install
 pnpm dev
 ```
@@ -263,5 +265,8 @@ MIT — see [LICENSE](LICENSE).
 
 ## Credits
 
+- **Original project**: [claude-pixel-agent-web](https://github.com/thousandsky2024/claude-pixel-agent-web) by [@thousandsky2024](https://github.com/thousandsky2024) and team — the foundation this fork is built upon
+- **This fork**: [oh-my-opencode-dungeon](https://github.com/khanhworktime/oh-my-opencode-dungeon) — adds Orchestra event pipeline, Docker support, and additional fixes
 - Pixel art sprites: [Another Metroidvania Asset Pack Vol. 1](https://itch.io) by the original artist
 - Built with [Claude](https://claude.ai) by Anthropic
+
