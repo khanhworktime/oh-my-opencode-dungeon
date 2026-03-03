@@ -7,73 +7,99 @@ How to connect your **Oh My OpenCode** agents to Oh My OpenCode Dungeon so they 
 ## Table of Contents
 
 1. [Quick Start](#quick-start)
-2. [Auth — Getting Your API Key](#auth--getting-your-api-key)
-3. [Running Claude Dungeon](#running-claude-dungeon)
-   - [Option A: Docker (recommended)](#option-a-docker-recommended)
-   - [Option B: Local dev server](#option-b-local-dev-server)
-4. [Connecting OpenCode](#connecting-opencode)
+2. [Choose Your Setup: Docker or Direct?](#choose-your-setup-docker-or-direct)
+3. [Auth — Getting Your API Key](#auth--getting-your-api-key)
+   4. [Running the Dungeon Server](#running-the-dungeon-server)
+   - [Option A: Direct (pnpm) — recommended for local dev](#option-a-direct-pnpm--recommended-for-local-dev)
+   - [Option B: Docker — recommended for shared/persistent setups](#option-b-docker--recommended-for-sharedpersistent-setups)
+   5. [Connecting OpenCode](#connecting-opencode)
    - [Method 1: OpenCode Plugin (recommended — zero config after install)](#method-1-opencode-plugin-recommended)
    - [Method 2: Pipe via --format json](#method-2-pipe-via---format-json)
    - [Method 3: Send events directly via curl](#method-3-send-events-directly-via-curl)
-5. [Event Schema Reference](#event-schema-reference)
-6. [Agent Role → Hero Class Mapping](#agent-role--hero-class-mapping)
-7. [Agent State → Dungeon Room Mapping](#agent-state--dungeon-room-mapping)
-8. [Troubleshooting](#troubleshooting)
-
+6. [Event Schema Reference](#event-schema-reference)
+7. [Agent Role → Hero Class Mapping](#agent-role--hero-class-mapping)
+8. [Agent State → Dungeon Room Mapping](#agent-state--dungeon-room-mapping)
+9. [Troubleshooting](#troubleshooting)
 ---
 
 ## Quick Start
 
+> **First:** pick how you want to run the server — see [Choose Your Setup](#choose-your-setup-docker-or-direct) below.
+> For most local users, **Option A (direct)** is the fastest path.
+
 ```bash
-# 1. Clone and start the dungeon
+# Option A — direct (no Docker needed)
 git clone https://github.com/khanhworktime/oh-my-opencode-dungeon
 cd oh-my-opencode-dungeon
+cp .env.example .env          # set JWT_SECRET (see below)
+pnpm install
+pnpm dev                      # → http://localhost:3000
+
+# Option B — Docker
 cp .env.example .env
-docker compose up -d
-
-# 2. Get your API key
-curl http://localhost:3001/api/bridge/key
-# → { "apiKey": "cpab_abc123..." }
-
-# 3. Set env vars (add to your shell profile to make permanent)
-export ORCHESTRA_DUNGEON_SERVER=http://localhost:3001
-export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...
-
-# 4a. After plugin install (see below) — just run OpenCode normally
-opencode
-
-# 4b. Or pipe a one-shot run
-opencode run --format json "fix the bug" | node bridge/omo-orchestra-bridge.mjs
+docker compose up -d          # → http://localhost:3001
 ```
 
-Open **http://localhost:3001** — heroes appear as your agents run.
+```bash
+# Get your API key (adjust port to match your chosen option)
+curl http://localhost:3000/api/bridge/key   # direct
+curl http://localhost:3001/api/bridge/key   # Docker
+# → { "apiKey": "cpab_abc123..." }
+
+# Set env vars (add to ~/.zshrc or ~/.bashrc to make permanent)
+export ORCHESTRA_DUNGEON_SERVER=http://localhost:3000   # or 3001 for Docker
+export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...
+
+# Now just run OpenCode — heroes appear automatically (after plugin install below)
+opencode
+```
+
+Open **http://localhost:3000** (direct) or **http://localhost:3001** (Docker) — heroes appear as your agents run.
+
+---
+
+## Choose Your Setup: Docker or Direct?
+
+**Ask yourself:**
+
+| I want to… | Use |
+| --- | --- |
+| Try it out quickly on my own machine | **Option A: Direct (`pnpm dev`)** |
+| Share the dungeon across teammates or keep it always-on | **Option B: Docker** |
+| Avoid installing Docker | **Option A: Direct** |
+| Contribute or modify the source code | **Option A: Direct** |
+| Run on a server / VPS | **Option B: Docker** |
+
+Both options are fully functional — same features, same browser UI, same OpenCode integration.
+The only differences are the default port (`3000` direct vs `3001` Docker) and lifecycle management.
 
 ## Auth — Getting Your API Key
 
-Claude Dungeon uses a single bearer token (prefixed `cpab_`) to authenticate bridge POSTs. The key is auto-generated on first start and persisted in a Docker volume.
+Claude Dungeon uses a single bearer token (prefixed `cpab_`) to authenticate bridge POSTs.
+The key is auto-generated on first start and stored in `~/.claude-dungeon/config.json`
+(direct mode) or in the `dungeon-data` Docker volume (Docker mode). It survives restarts in both cases.
 
 ### Retrieve the key
 
 ```bash
-# From localhost (no auth required on this endpoint)
+# Direct (pnpm dev)
+curl http://localhost:3000/api/bridge/key
+
+# Docker
 curl http://localhost:3001/api/bridge/key
-```
 
-```json
-{ "apiKey": "cpab_f3a8c12d..." }
-```
-
-### Inside Docker
-
-The volume `dungeon-data` maps to `/home/dungeon/.claude-dungeon` inside the container. The key survives container restarts.
-
-```bash
-docker compose exec app cat /home/dungeon/.claude-dungeon/config.json
+# → { "apiKey": "cpab_f3a8c12d..." }
 ```
 
 ### Rotating the key
 
 ```bash
+# Direct — just delete the config file and restart:
+rm ~/.claude-dungeon/config.json
+# restart pnpm dev, then:
+curl http://localhost:3000/api/bridge/key   # new key
+
+# Docker:
 docker compose exec app rm /home/dungeon/.claude-dungeon/config.json
 docker compose restart app
 curl http://localhost:3001/api/bridge/key   # new key
@@ -81,16 +107,47 @@ curl http://localhost:3001/api/bridge/key   # new key
 
 ---
 
-## Running Claude Dungeon
+## Running the Dungeon Server
 
-### Option A: Docker (recommended)
+### Option A: Direct (pnpm) — recommended for local dev
+
+**Prerequisites:** Node.js 18+, pnpm (`npm install -g pnpm`)
+
+```bash
+pnpm install
+cp .env.example .env
+```
+
+Edit `.env` — the only required field is `JWT_SECRET`:
+
+```bash
+# Generate a strong secret and paste it into .env:
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
+```
+
+```bash
+pnpm dev
+# Vite + Express server start together on http://localhost:3000
+# Port auto-increments if 3000 is already in use
+```
+
+Get your API key:
+
+```bash
+curl http://localhost:3000/api/bridge/key
+```
+
+> **Tip:** To keep it running in the background, use a process manager:
+> `pm2 start 'pnpm dev' --name dungeon`
+
+### Option B: Docker — recommended for shared/persistent setups
 
 **Prerequisites:** Docker + Docker Compose
 
 ```bash
 cp .env.example .env
-# Edit .env — at minimum set a real JWT_SECRET:
-#   JWT_SECRET=$(openssl rand -hex 32)
+# Edit .env — set JWT_SECRET:
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
 docker compose up -d
 
 # Verify:
@@ -100,16 +157,14 @@ curl http://localhost:3001/api/bridge/key
 
 The app listens on **port 3001** by default (set `PORT=xxxx` in `.env` to change).
 
-### Option B: Local dev server
-
-**Prerequisites:** Node.js 18+, pnpm
+The API key is persisted in the `dungeon-data` Docker volume and survives container restarts.
 
 ```bash
-pnpm install
-cp .env.example .env    # set JWT_SECRET
-pnpm dev               # starts on http://localhost:3000
+# Rotate key:
+docker compose exec app rm /home/dungeon/.claude-dungeon/config.json
+docker compose restart app
+curl http://localhost:3001/api/bridge/key   # new key
 ```
----
 
 ## Connecting OpenCode
 
@@ -146,7 +201,7 @@ Add the plugin to your global OpenCode config at `~/.config/opencode/opencode.js
 
 ```bash
 # Set in your shell profile (~/.zshrc or ~/.bashrc) to make permanent:
-export ORCHESTRA_DUNGEON_SERVER=http://localhost:3001
+export ORCHESTRA_DUNGEON_SERVER=http://localhost:3000   # direct; use 3001 for Docker
 export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...    # from /api/bridge/key
 
 # Now just run OpenCode normally — heroes appear automatically
@@ -354,3 +409,19 @@ PORT=3002
 ```
 
 Then update your `ORCHESTRA_DUNGEON_SERVER` accordingly.
+
+### Plugin loads globally but not inside a specific project
+
+OpenCode's project-level `opencode.json` **replaces** (not merges) the global `plugin` array.
+If your working directory has a `.opencode/opencode.json` with its own `"plugin"` array,
+`dungeon-bridge` will be silently dropped and heroes won't appear.
+
+Fix — add `"dungeon-bridge"` to the project config's plugin array:
+
+```json
+{
+  "plugin": ["oh-my-opencode@latest", "dungeon-bridge"]
+}
+```
+
+> This is a known OpenCode behaviour: project configs shadow (don't extend) the global plugin list.
