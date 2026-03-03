@@ -112,11 +112,14 @@ export const DungeonBridgePlugin = async ({ project }) => {
 
       case "session.status":
         if (raw.properties?.status) {
+          const s = raw.properties.status;
+          // "busy" = LLM is actively streaming a response
+          const agentState = (s === "running" || s === "busy") ? "executing" : s;
           events.push({
             ...base,
             eventId: nextId(),
             eventType: "agent.state.changed",
-            agentState: raw.properties.status === "running" ? "executing" : raw.properties.status,
+            agentState,
           });
         }
         break;
@@ -152,17 +155,27 @@ export const DungeonBridgePlugin = async ({ project }) => {
         break;
       }
 
-      case "message.part.updated":
-        // Reasoning / thinking update → planning state
-        if (raw.properties?.part?.type === "reasoning" || raw.properties?.part?.type === "thinking") {
+      case "message.part.updated": {
+        const partType = raw.properties?.part?.type;
+        if (partType === "reasoning" || partType === "thinking") {
+          // Extended thinking → planning room
           events.push({
             ...base,
             eventId: nextId(),
             eventType: "agent.state.changed",
             agentState: "planning",
           });
+        } else if (partType === "text" || partType === "step-start") {
+          // LLM writing text or starting a new step → executing
+          events.push({
+            ...base,
+            eventId: nextId(),
+            eventType: "agent.state.changed",
+            agentState: "executing",
+          });
         }
         break;
+      }
 
       case "message.updated":
         events.push({
