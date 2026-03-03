@@ -254,7 +254,7 @@ class DungeonScene extends Phaser.Scene {
 
     // ── Camera ──────────────────────────────────────────────────────────────
     this.cameras.main.setBounds(0, 0, CANVAS_W, CANVAS_H);
-    this.cameras.main.setZoom(0.5);
+    this.cameras.main.setZoom(1);
     this.cameras.main.centerOn(CANVAS_W / 2, CANVAS_H / 2);
 
     // ── Input ───────────────────────────────────────────────────────────────
@@ -704,9 +704,10 @@ export default function DungeonMapPhaser({ heroes, selectedHeroId, onHeroClick }
         roundPixels: true,
       },
       scale: {
-        mode: Phaser.Scale.NONE,
+        mode: Phaser.Scale.FIT,
         width: CANVAS_W,
         height: CANVAS_H,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
       },
       scene: [DungeonScene],
     };
@@ -724,8 +725,10 @@ export default function DungeonMapPhaser({ heroes, selectedHeroId, onHeroClick }
     setTimeout(() => {
       const canvas = containerRef.current?.querySelector("canvas");
       if (canvas) {
-        canvas.style.width = `${CANVAS_W * 0.5}px`;
-        canvas.style.height = `${CANVAS_H * 0.5}px`;
+        // Let Phaser handle the size, just ensure pixelated rendering
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.objectFit = "contain";
         canvas.style.imageRendering = "pixelated";
         canvas.style.display = "block";
       }
@@ -751,11 +754,12 @@ export default function DungeonMapPhaser({ heroes, selectedHeroId, onHeroClick }
       if (containerRef.current) {
         const canvas = containerRef.current.querySelector("canvas");
         if (canvas) {
-          canvas.style.width = `${CANVAS_W * 0.5}px`;
-          canvas.style.height = `${CANVAS_H * 0.5}px`;
+          // Let Phaser handle the size, just ensure pixelated rendering
+          canvas.style.width = "100%";
+          canvas.style.height = "100%";
+          canvas.style.objectFit = "contain";
           canvas.style.imageRendering = "pixelated";
           canvas.style.display = "block";
-          canvas.style.flexShrink = "0";
         }
       }
     };

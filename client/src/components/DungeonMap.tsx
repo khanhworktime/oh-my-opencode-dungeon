@@ -882,10 +882,10 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
     const CANVAS_H = MAP_ROWS * TS; // 1920 internal pixels
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
-    // Display at 50% scale so the full map fits on a Mac screen (1680x960 CSS pixels)
-    const DISPLAY_SCALE = 0.5;
-    canvas.style.width = `${CANVAS_W * DISPLAY_SCALE}px`;
-    canvas.style.height = `${CANVAS_H * DISPLAY_SCALE}px`;
+    // Display at 100% of container size, preserving aspect ratio via CSS object-fit
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.objectFit = "contain";
   }, []);
 
   const drawFrame = useCallback(() => {
@@ -1123,10 +1123,11 @@ export default function DungeonMap({ heroes, selectedHeroId, onHeroClick }: Prop
       const canvas = canvasRef.current;
       if (!canvas) return;
       const rect = canvas.getBoundingClientRect();
-      // Canvas is displayed at 50% scale, so convert CSS pixels → canvas pixels
-      const DISPLAY_SCALE = 0.5;
-      const mx = (e.clientX - rect.left) / DISPLAY_SCALE;
-      const my = (e.clientY - rect.top) / DISPLAY_SCALE;
+      // Calculate scale dynamically based on current display size
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mx = (e.clientX - rect.left) * scaleX;
+      const my = (e.clientY - rect.top) * scaleY;
 
       // Debug: log canvas coordinates on click when ?debug=1
       if (new URLSearchParams(window.location.search).get('debug') === '1') {
