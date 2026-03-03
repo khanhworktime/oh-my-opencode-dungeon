@@ -13,6 +13,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { getOrCreateApiKey } from "../bridge";
+import { getHeroes } from "../websocket";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,6 +60,10 @@ export interface Hero {
   maxMp: number;
   projectPath?: string;
   sessionFile?: string;
+  runId?: string;
+  agentRole?: string;
+  agentState?: string;
+  cursor?: number;
 }
 
 /** A real Claude Code skill backed by a SKILL.md file */
@@ -394,7 +399,7 @@ function getTrackedProjects(): Array<{ encodedName: string; realPath: string; se
 
 export const agentsRouter = router({
   // ── Heroes ──────────────────────────────────────────────────────────────────
-  list: publicProcedure.query(() => loadHeroes()),
+  list: publicProcedure.query(() => getHeroes()),
 
   clearHeroes: publicProcedure.mutation(() => {
     saveHeroes([]);

@@ -344,7 +344,7 @@ function drawWitch(ctx: CanvasRenderingContext2D, x: number, y: number, tick: nu
     ctx.fillStyle = "#FFAA44";
     ctx.font = "bold 11px monospace";
     ctx.textAlign = "center";
-    ctx.fillText("SHOP!", x, y - 73);
+    ctx.fillText("RESEARCH", x, y - 73);
     ctx.textAlign = "left";
   }
 }
@@ -419,7 +419,7 @@ function drawBoss(ctx: CanvasRenderingContext2D, tick: number, heroesInRoom: Her
   ctx.fillStyle = "#FF4444";
   ctx.font = "bold 12px monospace";
   ctx.textAlign = "center";
-  ctx.fillText("LORD WIZARD", bx, by - 79);
+  ctx.fillText("THE FORGE", bx, by - 79);
   ctx.textAlign = "left";
 
   const bossHp = isFighting ? 0.5 + Math.sin(tick * 0.03) * 0.2 : 1.0;
@@ -480,7 +480,7 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const ph = (r.spawn.r1 - r.spawn.r0 + 1) * TS;
 
     const cnt = heroes.filter(h => h.room === "church").length;
-    drawRoomLabel(ctx, "⛪ HOLY SANCTUARY", "#AA88FF", px, py, cnt, "#FFFFFF");
+    drawRoomLabel(ctx, "⛪ PLANNING CHAMBER", "#AA88FF", px, py, cnt, "#FFFFFF");
 
     // Spawn portal glow - aligned with new background portal (slightly above center)
     const bx = px + pw * 0.5, by = py + ph * 0.42;
@@ -504,7 +504,7 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const ph = (r.dungeon.r1 - r.dungeon.r0 + 1) * TS;
 
     const cnt = heroes.filter(h => h.room === "corridor").length;
-    drawRoomLabel(ctx, "📜 DUNGEON MAIN", "#88AAFF", px, py, cnt, "#FFFFFF");
+    drawRoomLabel(ctx, "🏢 COMMAND CENTER", "#88AAFF", px, py, cnt, "#FFFFFF");
 
     // Guardian fixed at room center - reacts when heroes are in dungeon
     const dungeonHeroes = heroes.filter(h => h.room === "corridor");
@@ -526,7 +526,7 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     }
 
     const cnt = heroes.filter(h => h.room === "boss_arena").length;
-    drawRoomLabel(ctx, "⚔ BOSS ARENA", "#FF4444", px, py, cnt, "#FF4444");
+    drawRoomLabel(ctx, "⚔ FORGE (EXECUTION)", "#FF4444", px, py, cnt, "#FF4444");
 
     // Pentagram glow overlay on new background
     const pgx = BOSS_SCREEN_X, pgy = BOSS_SCREEN_Y;
@@ -554,7 +554,7 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const ph = (r.shop.r1 - r.shop.r0 + 1) * TS;
 
     const cnt = heroes.filter(h => h.room === "shop").length;
-    drawRoomLabel(ctx, "🔮 WITCH SHOP", "#FFAA44", px, py, cnt, "#FFAA44");
+    drawRoomLabel(ctx, "📚 LIBRARY (RESEARCH)", "#FFAA44", px, py, cnt, "#FFAA44");
 
     // Witch fixed at room center - reacts when heroes are shopping
     const shopHeroes = heroes.filter(h => h.room === "shop");
@@ -570,7 +570,7 @@ function drawCastle(ctx: CanvasRenderingContext2D, heroes: Hero[], tick: number)
     const ph = (r.rest.r1 - r.rest.r0 + 1) * TS;
 
     const resting = heroes.filter(h => h.room === "rest_area");
-    drawRoomLabel(ctx, "🍺 TAVERN REST", "#44AA44", px, py, resting.length, "#44AA44");
+    drawRoomLabel(ctx, "☕ REVIEW / IDLE", "#44AA44", px, py, resting.length, "#44AA44");
 
     drawTorch(ctx, px + pw * 0.15, py + ph * 0.3, tick);
     drawTorch(ctx, px + pw * 0.85, py + ph * 0.3, tick);
@@ -773,21 +773,21 @@ function drawHero(
       }
     }
     if (state === "shopping") {
-      // Gold coin sparkles for shopping
-      for (let i = 0; i < 4; i++) {
-        const angle = tick * 0.08 + (i * Math.PI / 2);
-        ctx.fillStyle = "#FFD700";
-        ctx.globalAlpha = alpha * (0.7 + Math.sin(tick * 0.18 + i) * 0.25);
-        ctx.beginPath();
-        ctx.arc(x + Math.cos(angle) * 22, y + Math.sin(angle) * 14 - 8, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // Floating coin above hero
+      // Planning aura ring
+      const angle = tick * 0.05;
+      ctx.strokeStyle = "#FFAA00";
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = alpha * (0.6 + Math.sin(tick * 0.1) * 0.3);
+      ctx.beginPath();
+      ctx.ellipse(x, y + 6, 25, 8, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Floating "PLAN" text
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = "#FFD700";
-      ctx.font = "bold 14px monospace";
+      ctx.fillStyle = "#FFAA00";
+      ctx.font = "bold 12px monospace";
       ctx.textAlign = "center";
-      ctx.fillText("¥", x, y - 68 + Math.sin(tick * 0.07) * 5);
+      ctx.fillText("PLAN", x, y - 68 + Math.sin(tick * 0.07) * 5);
       ctx.textAlign = "left";
     }
     if (state === "idle" && mv.lastKnownRoom === "dungeon") {

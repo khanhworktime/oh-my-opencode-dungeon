@@ -29,6 +29,10 @@ export interface Hero {
   mp: number;
   maxMp: number;
   projectPath?: string;
+  runId?: string;
+  agentRole?: string;
+  agentState?: string;
+  cursor?: number;
 }
 
 export type AppMode = "demo" | "live";
@@ -81,7 +85,7 @@ export function useHeroSocket() {
       try {
         const msg: WsMessage = JSON.parse(event.data);
         handleMessage(msg);
-      } catch {}
+      } catch (e) { console.error("[WS] Failed to parse message:", e); }
     };
 
     ws.onclose = () => {

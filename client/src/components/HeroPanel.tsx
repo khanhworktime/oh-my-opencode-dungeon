@@ -29,7 +29,7 @@ export default function HeroPanel({ hero, onClose, onSkillsUpdated }: Props) {
 
   const hpPct = Math.round((hero.hp / hero.maxHp) * 100);
   const mpPct = Math.round((hero.mp / hero.maxMp) * 100);
-  const expPct = Math.round((hero.exp / (hero.level * 100)) * 100);
+  const expPct = hero.level > 0 ? Math.round((hero.exp / (hero.level * 100)) * 100) : 0;
 
   const allTools = useMemo(() => {
     const tools = [...(hero.activeTools || [])];

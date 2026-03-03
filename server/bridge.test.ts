@@ -1,8 +1,8 @@
 /**
  * Bridge API tests
  */
-
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
+import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -11,15 +11,13 @@ import os from "os";
 const TEST_DIR = path.join(os.tmpdir(), "claude-dungeon-test-" + Date.now());
 const TEST_CONFIG_PATH = path.join(TEST_DIR, "config.json");
 
-// Mock the DATA_DIR by temporarily overriding the module
-// We'll test the helper functions directly
-
 function ensureTestDir() {
   if (!fs.existsSync(TEST_DIR)) fs.mkdirSync(TEST_DIR, { recursive: true });
 }
 
 function cleanupTestDir() {
-  if (fs.existsSync(TEST_DIR)) fs.rmSync(TEST_DIR, { recursive: true, force: true });
+  if (fs.existsSync(TEST_DIR))
+    fs.rmSync(TEST_DIR, { recursive: true, force: true });
 }
 
 function loadTestConfig(): Record<string, unknown> {
@@ -41,26 +39,16 @@ function getOrCreateTestApiKey(): string {
   if (config.bridgeApiKey && typeof config.bridgeApiKey === "string") {
     return config.bridgeApiKey;
   }
-  const key = "cpab_" + Array.from({ length: 32 }, () =>
-    Math.random().toString(36)[2]
-  ).join("");
+  const key = "cpab_" + crypto.randomBytes(32).toString("hex");
   saveTestConfig({ ...config, bridgeApiKey: key });
   return key;
 }
 
 describe("Bridge API Key Management", () => {
-  beforeEach(() => {
-    ensureTestDir();
-  });
-
-  afterEach(() => {
-    cleanupTestDir();
-  });
-
   it("generates a new API key when none exists", () => {
     const key = getOrCreateTestApiKey();
     expect(key).toBeTruthy();
-    expect(key).toMatch(/^cpab_[a-z0-9]{32}$/);
+    expect(key).toMatch(/^cpab_[a-f0-9]{64}$/);
   });
 
   it("returns the same key on subsequent calls", () => {
@@ -76,17 +64,17 @@ describe("Bridge API Key Management", () => {
   });
 
   it("uses existing key from config file", () => {
-    const existingKey = "cpab_existingkey12345678901234567890";
+    const existingKey = "cpab_" + "a".repeat(64);
     saveTestConfig({ bridgeApiKey: existingKey });
     const key = getOrCreateTestApiKey();
     expect(key).toBe(existingKey);
   });
 
-  it("API key has correct format (cpab_ prefix + 32 chars)", () => {
+  it("API key has correct format (cpab_ prefix + 64 hex chars)", () => {
     const key = getOrCreateTestApiKey();
     const parts = key.split("_");
     expect(parts[0]).toBe("cpab");
-    expect(parts[1]).toHaveLength(32);
+    expect(parts[1]).toHaveLength(64);
   });
 });
 
@@ -109,7 +97,6 @@ describe("Bridge Script Validation", () => {
       "claude-dungeon-bridge.mjs"
     );
     const content = fs.readFileSync(bridgePath, "utf-8");
-    // Basic checks
     expect(content).toContain("CLAUDE_DUNGEON_API_KEY");
     expect(content).toContain("CLAUDE_DUNGEON_SERVER");
     expect(content).toContain("/api/bridge/heroes");
@@ -125,5 +112,37 @@ describe("Bridge Script Validation", () => {
     );
     const content = fs.readFileSync(bridgePath, "utf-8");
     expect(content).toContain("claudepixl-kuk4sjxk.manus.space");
+  });
+});
+
+describe("Bridge API Validation (Direct)", () => {
+  it("rejects non-array heroes for POST /api/bridge/heroes", async () => {
+    const { HeroesBatchSchema } = await import("./bridge");
+    const result = HeroesBatchSchema.safeParse({ heroes: "not an array" });
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  it("rejects missing hero for POST /api/bridge/hero", async () => {
+    const { HeroUpdateSchema } = await import("./bridge");
+    const result = HeroUpdateSchema.safeParse({ event: "new" });
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  it("rejects invalid event string for POST /api/bridge/hero", async () => {
+    const { HeroUpdateSchema } = await import("./bridge");
+    const result = HeroUpdateSchema.safeParse({
+      hero: { id: "test-hero" },
+      event: "invalid-event",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
+  it("accepts valid clear request for POST /api/bridge/clear", async () => {
+    const { ClearSchema } = await import("./bridge");
+    const result = ClearSchema.safeParse({});
+    expect(result.success).toBe(true);
   });
 });

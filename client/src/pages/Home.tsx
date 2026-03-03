@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import DungeonMap from "@/components/DungeonMapPhaser";
 import HeroPanel from "@/components/HeroPanel";
-import SkillsManager from "@/components/SkillsManager";
 import ConfigPanel from "@/components/ConfigPanel";
 import { useHeroSocket } from "@/hooks/useHeroSocket";
 import { HERO_CLASSES, STATE_COLORS, STATE_LABELS } from "@/lib/dungeonConfig";
@@ -11,7 +10,6 @@ export default function Home() {
   const { heroes, setHeroes, mode, connected, log, startDemo, startLive, clearHeroes } =
     useHeroSocket();
   const [selectedHeroId, setSelectedHeroId] = useState<number | null>(null);
-  const [showSkillsManager, setShowSkillsManager] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
@@ -20,7 +18,6 @@ export default function Home() {
     [heroes, selectedHeroId]
   );
 
-  const refetchHeroes = trpc.agents.list.useQuery(undefined, { enabled: false });
   const { data: trackedProjects } = trpc.agents.trackedProjects.useQuery(undefined, { refetchInterval: 5000 });
 
   const stats = useMemo(() => {
@@ -45,10 +42,10 @@ export default function Home() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-[#FFD700] uppercase tracking-widest leading-none">
-              Claude Dungeon
+              Orchestra Dungeon
             </h1>
             <p className="text-xs text-[#AA88FF] leading-none mt-0.5">
-              Agent Visualization System
+              Oh My OpenCode Orchestra Dashboard
             </p>
           </div>
         </div>
@@ -57,8 +54,8 @@ export default function Home() {
         <div className="hidden md:flex items-center gap-1">
           {[
             { label: "Heroes", value: stats.total, color: "#88AAFF", bg: "#88AAFF22", border: "#88AAFF44" },
-            { label: "Fighting", value: stats.active, color: "#FF4444", bg: "#FF444422", border: "#FF444444" },
-            { label: "Resting", value: stats.resting, color: "#44AA44", bg: "#44AA4422", border: "#44AA4444" },
+            { label: "Executing", value: stats.active, color: "#FF4444", bg: "#FF444422", border: "#FF444444" },
+            { label: "Waiting", value: stats.resting, color: "#44AA44", bg: "#44AA4422", border: "#44AA4444" },
             { label: "Planning", value: stats.planning, color: "#FFAA00", bg: "#FFAA0022", border: "#FFAA0044" },
           ].map((s) => (
             <div
@@ -117,12 +114,6 @@ export default function Home() {
             ⚙️ Config
           </button>
 
-          <button
-            onClick={() => setShowSkillsManager(true)}
-            className="px-2.5 py-1 text-xs font-bold uppercase border border-[#FFAA00] text-[#FFAA00] hover:bg-[#FFAA00] hover:text-black transition-colors rounded"
-          >
-            ✨ Skills
-          </button>
 
           <button
             onClick={clearHeroes}
@@ -256,7 +247,7 @@ export default function Home() {
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
                   LIVE MODE
                 </div>
-                <div className="text-gray-600 mt-0.5">Watching ~/.claude/</div>
+                <div className="text-gray-600 mt-0.5">Watching Orchestra...</div>
               </div>
             ) : (
               <div className="text-xs">
@@ -343,13 +334,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Skills Manager Modal */}
-      {showSkillsManager && (
-        <SkillsManager
-          onClose={() => setShowSkillsManager(false)}
-          projects={trackedProjects ?? []}
-        />
-      )}
 
       {/* Config Panel Modal */}
       {showConfig && (

@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build artifacts (Docker copies from dist/ in builder stage)
+# — don't exclude dist here; builder needs to copy it
+
+# Dev/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+.manus-logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Local data / secrets
+.env
+.env.local
+~/.claude-dungeon/
+
+# Test
+coverage/
+vitest.config.ts
+
+# Docs / plans (not needed at runtime)
+plans/
+*.md
+!README.md
+
+# Misc
+.sisyphus/
+.opencode/
+attached_assets/
+# patches/ is needed by pnpm install — do NOT ignore it
