@@ -224,6 +224,7 @@ export function createBridgeRouter(
         res.status(500).json({ error: "Internal server error" });
         return;
       }
+    },
   );
 
 

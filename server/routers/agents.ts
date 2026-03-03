@@ -17,7 +17,8 @@ import { getHeroes } from "../websocket";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type HeroClass = "warrior" | "mage" | "cleric";
+import type { HeroClass } from "../../shared/orchestraEvent";
+export type { HeroClass } from "../../shared/orchestraEvent";
 export type HeroState =
   | "idle"
   | "walking"

@@ -206,6 +206,7 @@ function broadcast(message: { type: string; payload: unknown }) {
         client.send(data);
       } catch (error) {
         console.warn("[WebSocket] Send error:", error);
+      }
     }
   });
 }
@@ -454,6 +455,7 @@ export function initializeWebSocket(server: unknown) {
         handleClientMessage(msg);
       } catch (error) {
         console.warn("[WebSocket] Message parse error:", error);
+      }
     });
 
     ws.on("close", () => console.log("[WebSocket] Client disconnected"));
