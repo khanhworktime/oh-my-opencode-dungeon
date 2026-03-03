@@ -46,7 +46,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/bridge ./bridge
 
 # Non-root user for security
-RUN addgroup -S dungeon && adduser -S dungeon -G dungeon
+RUN addgroup -S dungeon && adduser -S dungeon -G dungeon && mkdir -p /home/dungeon/.claude-dungeon && chown -R dungeon:dungeon /home/dungeon
 RUN chown -R dungeon:dungeon /app
 USER dungeon
 

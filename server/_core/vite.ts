@@ -3,20 +3,42 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
-import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
 
 export async function setupVite(app: Express, server: Server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
+  // Dynamic imports keep ALL vite-related packages out of the production
+  // bundle. esbuild --packages=external will NOT follow dynamic imports.
+  // We also inline a minimal vite config here instead of re-importing
+  // vite.config.ts, because vite.config.ts has static top-level imports
+  // of dev-only plugins (@builder.io/vite-plugin-jsx-loc,
+  // vite-plugin-manus-runtime) that are not installed in production.
+  const { createServer: createViteServer } = await import("vite");
+  const { default: react } = await import("@vitejs/plugin-react");
+  const { default: tailwindcss } = await import("@tailwindcss/vite");
+
+  const root = path.resolve(import.meta.dirname, "../..", "client");
 
   const vite = await createViteServer({
-    ...viteConfig,
     configFile: false,
-    server: serverOptions,
+    root,
+    publicDir: path.resolve(import.meta.dirname, "../..", "client", "public"),
+    envDir: path.resolve(import.meta.dirname, "../.."),
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        "@": path.resolve(import.meta.dirname, "../..", "client", "src"),
+        "@shared": path.resolve(import.meta.dirname, "../..", "shared"),
+        "@assets": path.resolve(
+          import.meta.dirname,
+          "../..",
+          "attached_assets"
+        ),
+      },
+    },
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true as const,
+    },
     appType: "custom",
   });
 
