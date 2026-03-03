@@ -30,8 +30,8 @@ Claude Dungeon (now supporting Orchestra mode) ingests real-time events from mul
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/claude-dungeon
-cd claude-dungeon
+git clone https://github.com/thousandsky2024/claude-pixel-agent-web
+cd claude-pixel-agent-web
 pnpm install
 pnpm dev
 ```

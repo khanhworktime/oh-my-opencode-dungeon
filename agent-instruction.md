@@ -25,8 +25,8 @@ How to connect your **Oh My OpenCode** agents to Claude Dungeon so they appear a
 
 ```bash
 # 1. Clone and start
-git clone https://github.com/your-username/claude-dungeon
-cd claude-dungeon
+git clone https://github.com/thousandsky2024/claude-pixel-agent-web
+cd claude-pixel-agent-web
 cp .env.example .env          # edit JWT_SECRET at minimum
 docker compose up -d
 

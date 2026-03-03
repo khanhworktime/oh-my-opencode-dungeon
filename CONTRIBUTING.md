@@ -5,10 +5,10 @@ Thank you for your interest in contributing! Here's how to get started.
 ## Development Setup
 
 ```bash
-git clone https://github.com/your-username/claude-dungeon
-cd claude-dungeon
+git clone https://github.com/thousandsky2024/claude-pixel-agent-web
+cd claude-pixel-agent-web
 pnpm install
-cp .env.example .env   # fill in DATABASE_URL and JWT_SECRET
+cp .env.example .env   # set JWT_SECRET (DATABASE_URL is optional)
 pnpm db:push
 pnpm dev
 ```
