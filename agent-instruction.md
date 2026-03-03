@@ -11,9 +11,10 @@ How to connect your **Oh My OpenCode** agents to Oh My OpenCode Dungeon so they 
 3. [Running Claude Dungeon](#running-claude-dungeon)
    - [Option A: Docker (recommended)](#option-a-docker-recommended)
    - [Option B: Local dev server](#option-b-local-dev-server)
-4. [Connecting Oh My OpenCode](#connecting-oh-my-opencode)
-   - [Using the bridge script](#using-the-bridge-script)
-   - [Sending events directly](#sending-events-directly)
+4. [Connecting OpenCode](#connecting-opencode)
+   - [Method 1: OpenCode Plugin (recommended — zero config after install)](#method-1-opencode-plugin-recommended)
+   - [Method 2: Pipe via --format json](#method-2-pipe-via---format-json)
+   - [Method 3: Send events directly via curl](#method-3-send-events-directly-via-curl)
 5. [Event Schema Reference](#event-schema-reference)
 6. [Agent Role → Hero Class Mapping](#agent-role--hero-class-mapping)
 7. [Agent State → Dungeon Room Mapping](#agent-state--dungeon-room-mapping)
@@ -24,37 +25,38 @@ How to connect your **Oh My OpenCode** agents to Oh My OpenCode Dungeon so they 
 ## Quick Start
 
 ```bash
-# 1. Clone and start
+# 1. Clone and start the dungeon
 git clone https://github.com/khanhworktime/oh-my-opencode-dungeon
 cd oh-my-opencode-dungeon
-cp .env.example .env          # edit JWT_SECRET at minimum
+cp .env.example .env
 docker compose up -d
 
-# 2. Get your API key (only accessible from localhost)
-curl http://localhost:3000/api/bridge/key
+# 2. Get your API key
+curl http://localhost:3001/api/bridge/key
 # → { "apiKey": "cpab_abc123..." }
 
-# 3. Point your Oh My OpenCode session at Claude Dungeon
-export ORCHESTRA_DUNGEON_SERVER=http://localhost:3000
+# 3. Set env vars (add to your shell profile to make permanent)
+export ORCHESTRA_DUNGEON_SERVER=http://localhost:3001
 export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...
 
-# 4. Run the bridge (pipe Oh My OpenCode stdout into it)
-node bridge/omo-orchestra-bridge.mjs
+# 4a. After plugin install (see below) — just run OpenCode normally
+opencode
+
+# 4b. Or pipe a one-shot run
+opencode run --format json "fix the bug" | node bridge/omo-orchestra-bridge.mjs
 ```
 
-Open **http://localhost:3000** — heroes appear as your agents run.
-
----
+Open **http://localhost:3001** — heroes appear as your agents run.
 
 ## Auth — Getting Your API Key
 
-Claude Dungeon uses a single bearer token (prefixed `cpab_`) to authenticate bridge POSTs. The key is auto-generated on first start and persisted to `~/.claude-dungeon/config.json`.
+Claude Dungeon uses a single bearer token (prefixed `cpab_`) to authenticate bridge POSTs. The key is auto-generated on first start and persisted in a Docker volume.
 
 ### Retrieve the key
 
 ```bash
-# From localhost (always works — no auth required on this endpoint)
-curl http://localhost:3000/api/bridge/key
+# From localhost (no auth required on this endpoint)
+curl http://localhost:3001/api/bridge/key
 ```
 
 ```json
@@ -63,21 +65,18 @@ curl http://localhost:3000/api/bridge/key
 
 ### Inside Docker
 
-The volume `dungeon-data` maps to `/home/dungeon/.claude-dungeon` inside the container. The key survives container restarts — you only need to retrieve it once.
+The volume `dungeon-data` maps to `/home/dungeon/.claude-dungeon` inside the container. The key survives container restarts.
 
 ```bash
-# If you need the raw file
 docker compose exec app cat /home/dungeon/.claude-dungeon/config.json
 ```
 
 ### Rotating the key
 
-Delete the config file and restart the server — a new key is generated automatically.
-
 ```bash
 docker compose exec app rm /home/dungeon/.claude-dungeon/config.json
 docker compose restart app
-curl http://localhost:3000/api/bridge/key   # new key
+curl http://localhost:3001/api/bridge/key   # new key
 ```
 
 ---
@@ -89,20 +88,17 @@ curl http://localhost:3000/api/bridge/key   # new key
 **Prerequisites:** Docker + Docker Compose
 
 ```bash
-# 1. Copy and configure environment
 cp .env.example .env
 # Edit .env — at minimum set a real JWT_SECRET:
 #   JWT_SECRET=$(openssl rand -hex 32)
-
-# 2. Build and start
 docker compose up -d
 
-# 3. Verify it's healthy
+# Verify:
 docker compose ps
-curl http://localhost:3000/api/bridge/key
+curl http://localhost:3001/api/bridge/key
 ```
 
-The app listens on **port 3000** by default. Set `PORT=xxxx` in `.env` to change it.
+The app listens on **port 3001** by default (set `PORT=xxxx` in `.env` to change).
 
 ### Option B: Local dev server
 
@@ -110,47 +106,93 @@ The app listens on **port 3000** by default. Set `PORT=xxxx` in `.env` to change
 
 ```bash
 pnpm install
-cp .env.example .env      # set JWT_SECRET
-pnpm dev                  # starts on http://localhost:3000
+cp .env.example .env    # set JWT_SECRET
+pnpm dev               # starts on http://localhost:3000
 ```
+---
+
+## Connecting OpenCode
+
+OpenCode has two integration paths. **Method 1 (plugin) is recommended** — once installed it works automatically in the background whenever `ORCHESTRA_DUNGEON_SERVER` is set.
 
 ---
 
-## Connecting Oh My OpenCode
+### Method 1: OpenCode Plugin (recommended)
 
-### Using the bridge script
+The plugin hooks into OpenCode's event system and forwards every session event to the dungeon in real time. No piping, no extra scripts.
 
-The `bridge/omo-orchestra-bridge.mjs` script reads JSON events from **stdin** and forwards them to Claude Dungeon in batches.
-
-#### Step 1 — Set environment variables
+#### Install (one-time setup)
 
 ```bash
-export ORCHESTRA_DUNGEON_SERVER=http://localhost:3000
-export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...    # from /api/bridge/key
+# 1. Create the global plugin directory
+mkdir -p ~/.config/opencode/plugins
+
+# 2. Copy the plugin from this repo
+cp plugins/dungeon-bridge.js ~/.config/opencode/plugins/dungeon-bridge.js
 ```
 
-#### Step 2 — Pipe Oh My OpenCode output into the bridge
+Add the plugin to your global OpenCode config at `~/.config/opencode/opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["dungeon-bridge"]
+}
+```
+
+> If the file already has other settings, just add `"dungeon-bridge"` to the existing `plugin` array.
+
+#### Use
 
 ```bash
-# If your omo session writes events to stdout
-omo run my-task | node bridge/omo-orchestra-bridge.mjs
+# Set in your shell profile (~/.zshrc or ~/.bashrc) to make permanent:
+export ORCHESTRA_DUNGEON_SERVER=http://localhost:3001
+export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...    # from /api/bridge/key
 
-# Or replay sample events to test the visualization
+# Now just run OpenCode normally — heroes appear automatically
+opencode
+```
+
+The plugin is **silent when env vars are not set**, so you can leave it installed permanently without affecting sessions where you don't want dungeon visualization.
+
+#### What events the plugin forwards
+
+| OpenCode event | Hero effect |
+| -------------- | ----------- |
+| Session starts | Hero spawns in dungeon |
+| `tool.execute.before` | Hero enters Boss Arena (fighting) |
+| `tool.execute.after` | Hero returns to executing state |
+| `message.part.updated` (reasoning) | Hero moves to Merchant Shop (planning) |
+| `session.idle` | Hero rests in Tavern |
+| `session.deleted` / `session.error` | Hero disappears |
+
+---
+
+### Method 2: Pipe via --format json
+
+Use `opencode run --format json` to output JSONL events to stdout and pipe them into the bridge script. Good for one-shot automated tasks.
+
+```bash
+export ORCHESTRA_DUNGEON_SERVER=http://localhost:3001
+export ORCHESTRA_DUNGEON_API_KEY=cpab_abc123...
+
+# One-shot task
+opencode run --format json "fix the login bug" | node bridge/omo-orchestra-bridge.mjs
+
+# Replay sample events to test the visualization without running OpenCode
 cat sample-events.jsonl | node bridge/omo-orchestra-bridge.mjs
 ```
 
-#### Step 3 — Open the UI
-
-Navigate to **http://localhost:3000** — heroes spawn as agents come online.
+The bridge automatically transforms OpenCode's native JSONL format (`tool_use`, `step_start`, `text`, etc.) into Orchestra events.
 
 ---
 
-### Sending events directly
+### Method 3: Send events directly via curl
 
-You can also POST events directly from any process (no bridge needed):
+POST events from any script or process — no bridge script needed:
 
 ```bash
-curl -X POST http://localhost:3000/api/bridge/events \
+curl -X POST http://localhost:3001/api/bridge/events \
   -H "Content-Type: application/json" \
   -H "x-bridge-api-key: cpab_abc123..." \
   -d '{
@@ -170,9 +212,7 @@ curl -X POST http://localhost:3000/api/bridge/events \
   }'
 ```
 
-Events are appended to an in-memory store and persisted to `~/.claude-dungeon/events/<runId>.jsonl`. Heroes update instantly via WebSocket.
-
----
+Events are forwarded via WebSocket to all connected browsers immediately.
 
 ## Event Schema Reference
 
@@ -247,13 +287,12 @@ All events share this envelope. Only `schemaVersion`, `eventId`, `eventType`, `o
 State is inferred from `agentState` on `agent.state.changed` events, and also from `tool.call.started` / `tool.call.finished` pairs (hero fights while a tool is in flight).
 
 ---
-
 ## Troubleshooting
 
 ### Bridge exits with "ORCHESTRA_DUNGEON_SERVER is required"
 
 ```bash
-export ORCHESTRA_DUNGEON_SERVER=http://localhost:3000
+export ORCHESTRA_DUNGEON_SERVER=http://localhost:3001
 ```
 
 ### POST returns 401
@@ -261,18 +300,34 @@ export ORCHESTRA_DUNGEON_SERVER=http://localhost:3000
 The API key is wrong or missing. Re-fetch:
 
 ```bash
-curl http://localhost:3000/api/bridge/key
+curl http://localhost:3001/api/bridge/key
 ```
+
+### Plugin installed but heroes don't appear
+
+1. Confirm the plugin file is at `~/.config/opencode/plugins/dungeon-bridge.js`
+2. Confirm `~/.config/opencode/opencode.json` contains `"plugin": ["dungeon-bridge"]`
+3. Confirm both env vars are exported in the same terminal where you run `opencode`
+4. Quick smoke test — paste this to verify the server pipeline works:
+
+```bash
+curl -X POST $ORCHESTRA_DUNGEON_SERVER/api/bridge/events \
+  -H "Content-Type: application/json" \
+  -H "x-bridge-api-key: $ORCHESTRA_DUNGEON_API_KEY" \
+  -d '{"runId":"test","events":[{"schemaVersion":1,"eventId":"t1","eventType":"agent.spawned","occurredAt":'$(date +%s)'000,"runId":"test","agentInstanceId":"hero-1","agentRole":"sisyphus"}]}'
+```
+
+If a hero appears in the dungeon, the server is working correctly — the issue is with event forwarding from OpenCode.
 
 ### Heroes don't appear after spawning
 
-1. Check that `agent.spawned` was sent with a valid `agentInstanceId`.
-2. Check that `run.started` was sent before `agent.spawned` (or send them together).
-3. Look at server logs: `docker compose logs -f app`
+1. Confirm `agent.spawned` was sent with a valid `agentInstanceId`.
+2. Confirm `run.started` was sent before `agent.spawned`.
+3. Check server logs: `docker compose logs -f app`
 
 ### Heroes accumulate across runs
 
-Send a `run.ended` event at the end of each session — the server cleans up heroes for that `runId`:
+Send a `run.ended` event at the end of each session:
 
 ```json
 {
@@ -284,16 +339,18 @@ Send a `run.ended` event at the end of each session — the server cleans up her
 }
 ```
 
+The plugin (Method 1) emits this automatically on `session.deleted`.
+
 ### Replay persisted events after restart
 
-Events are automatically rehydrated from `~/.claude-dungeon/events/` on server startup. The 5 most recent runs are replayed. No action needed.
+Events are automatically rehydrated from `~/.claude-dungeon/events/` on server startup. No action needed.
 
 ### Port conflict
 
 Set a different port in `.env`:
 
 ```
-PORT=3001
+PORT=3002
 ```
 
 Then update your `ORCHESTRA_DUNGEON_SERVER` accordingly.

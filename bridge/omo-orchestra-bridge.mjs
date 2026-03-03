@@ -58,31 +58,83 @@ let pendingBatches = [];
  * @returns {object|null} - A valid OrchestraEvent or null if untransformable
  */
 function transformEvent(raw, index) {
-  if (typeof raw !== "object" || raw === null) return null;
+  if (typeof raw !== 'object' || raw === null) return null;
 
   // Already a valid Orchestra event — pass through, ensure runId is set
   if (raw.schemaVersion === 1 && raw.eventId && raw.eventType && raw.occurredAt) {
     return { ...raw, runId: raw.runId || SESSION_RUN_ID };
   }
 
-  // Legacy format: { timestamp, type, ... } → transform to Orchestra schema
+  // ── OpenCode native --format json output ─────────────────────────────
+  // Formats: { type, timestamp, sessionID, part: { tool, state, text, ... } }
+  if (raw.sessionID && raw.type) {
+    const sessionId = raw.sessionID;
+    const ts = typeof raw.timestamp === 'number' ? raw.timestamp : Date.now();
+    const base = {
+      schemaVersion: 1,
+      eventId: `bridge-oc-${SESSION_RUN_ID}-${index}-${Date.now()}`,
+      occurredAt: ts,
+      runId: sessionId,
+      agentInstanceId: sessionId,
+      agentRole: 'sisyphus',
+      workspaceId: 'local',
+    };
+
+    switch (raw.type) {
+      case 'step_start':
+        return { ...base, eventType: 'agent.state.changed', agentState: 'executing' };
+
+      case 'tool_use': {
+        const part = raw.part || {};
+        const toolName = part.tool || 'unknown';
+        const status = part.state?.status;
+        if (status === 'completed' || status === 'error') {
+          return { ...base, eventType: 'tool.call.finished', toolCallId: `${sessionId}-tool-${index}`, toolName };
+        }
+        return { ...base, eventType: 'tool.call.started', toolCallId: `${sessionId}-tool-${index}`, toolName };
+      }
+
+      case 'text': {
+        const text = raw.part?.text || '';
+        return { ...base, eventType: 'agent.message.appended', message: String(text).slice(0, 200) };
+      }
+
+      case 'step_finish':
+        return { ...base, eventType: 'agent.state.changed', agentState: 'idle' };
+
+      // 'message.part.updated' = thinking/reasoning — map to planning state
+      case 'message.part.updated': {
+        const partType = raw.part?.type;
+        if (partType === 'tool-invocation') {
+          const toolName = raw.part?.toolInvocation?.toolName || 'unknown';
+          return { ...base, eventType: 'tool.call.started', toolCallId: `${sessionId}-tool-${index}`, toolName };
+        }
+        return { ...base, eventType: 'agent.state.changed', agentState: 'planning' };
+      }
+
+      default:
+        return { ...base, eventType: 'agent.message.appended', message: raw.type };
+    }
+  }
+
+  // ── Legacy / generic format ──────────────────────────────────────────
   const eventType = raw.eventType || raw.type;
-  if (!eventType || typeof eventType !== "string") return null;
+  if (!eventType || typeof eventType !== 'string') return null;
 
   const validEventTypes = [
-    "run.started", "run.ended", "agent.spawned", "agent.state.changed",
-    "tool.call.started", "tool.call.finished", "agent.message.appended", "delegation"
+    'run.started', 'run.ended', 'agent.spawned', 'agent.state.changed',
+    'tool.call.started', 'tool.call.finished', 'agent.message.appended', 'delegation'
   ];
-  const mappedType = validEventTypes.includes(eventType) ? eventType : "agent.message.appended";
+  const mappedType = validEventTypes.includes(eventType) ? eventType : 'agent.message.appended';
 
   return {
     schemaVersion: 1,
     eventId: raw.eventId || `bridge-${SESSION_RUN_ID}-${index}-${Date.now()}`,
     eventType: mappedType,
-    occurredAt: typeof raw.occurredAt === "number" ? raw.occurredAt
-              : typeof raw.timestamp === "number" ? raw.timestamp
+    occurredAt: typeof raw.occurredAt === 'number' ? raw.occurredAt
+              : typeof raw.timestamp === 'number' ? raw.timestamp
               : Date.now(),
-    workspaceId: raw.workspaceId || "local",
+    workspaceId: raw.workspaceId || 'local',
     runId: raw.runId || SESSION_RUN_ID,
     agentInstanceId: raw.agentInstanceId || raw.instanceId || undefined,
     agentRole: raw.agentRole || raw.role || undefined,
@@ -292,6 +344,7 @@ async function main() {
         }
       } else {
         console.error(`Skipping untransformable event on line ${lineCount}: ${line}`);
+      }
     } catch (error) {
       console.error(`Invalid JSON on line ${lineCount}: ${line}`);
     }
