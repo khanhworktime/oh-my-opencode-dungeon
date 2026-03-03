@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import DungeonMap from "@/components/DungeonMap";
+import DungeonMap from "@/components/DungeonMapPhaser";
 import HeroPanel from "@/components/HeroPanel";
 import SkillsManager from "@/components/SkillsManager";
 import ConfigPanel from "@/components/ConfigPanel";
@@ -271,7 +271,7 @@ export default function Home() {
         </div>
 
         {/* Center - Dungeon Map */}
-        <div className="flex-1 relative bg-[#06060f] overflow-hidden" style={{ minHeight: 0 }}>
+        <div className="flex-1 relative bg-[#06060f] overflow-auto" style={{ minHeight: 0 }}>
           <DungeonMap
             heroes={heroes}
             selectedHeroId={selectedHeroId}
